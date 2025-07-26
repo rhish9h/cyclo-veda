@@ -1,23 +1,36 @@
+/**
+ * App Component Styles
+ * 
+ * This file contains styles specific to the main App component.
+ * These styles handle the root container layout and component-specific styling.
+ */
+
+/* Root container styles */
+/* Main application container with centered layout */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
+  max-width: 1280px; /* Maximum width for large screens */
+  margin: 0 auto; /* Center horizontally */
   padding: 2rem;
   text-align: center;
 }
 
+/* Logo styles */
+/* Styling for logo elements with hover effects */
 .logo {
   height: 6em;
   padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+  will-change: filter; /* Optimize for filter animations */
+  transition: filter 300ms; /* Smooth hover transition */
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 2em #646cffaa); /* Blue glow effect */
 }
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  filter: drop-shadow(0 0 2em #61dafbaa); /* React blue glow effect */
 }
 
+/* Logo animation */
+/* Spinning animation for logo elements */
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
@@ -27,12 +40,15 @@
   }
 }
 
+/* Accessibility: Only animate if user hasn't requested reduced motion */
 @media (prefers-reduced-motion: no-preference) {
   a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;
   }
 }
 
+/* Card component styles */
+/* Generic card container styling */
 .card {
   padding: 2em;
 }

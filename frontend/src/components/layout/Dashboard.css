@@ -1,0 +1,115 @@
+/**
+ * Dashboard Component Styles
+ * 
+ * This file contains all styles for the Dashboard component.
+ * Features clean, professional design with proper spacing,
+ * typography, and interactive elements for the main app interface.
+ * 
+ * Structure:
+ * - Main dashboard container
+ * - Header with navigation and logout
+ * - Content area with cards and widgets
+ * - Interactive elements and hover states
+ * - Responsive design considerations
+ */
+
+/* Main dashboard container */
+/* Full-height layout with light background */
+.dashboard {
+  min-height: 100vh;
+  background: #f8f9fa; /* Light gray background */
+}
+
+/* Dashboard header */
+/* Top navigation bar with title and logout button */
+.dashboard-header {
+  background: white;
+  padding: 20px 40px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  display: flex;
+  justify-content: space-between; /* Space between title and logout */
+  align-items: center;
+}
+
+/* Dashboard title */
+/* Main heading in the header */
+.dashboard-header h1 {
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Logout button */
+/* Red button with hover effects for user logout */
+.logout-button {
+  background: #dc3545; /* Bootstrap danger red */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease; /* Smooth hover transition */
+}
+
+.logout-button:hover {
+  background: #c82333; /* Darker red on hover */
+  transform: translateY(-1px); /* Subtle lift effect */
+}
+
+/* Dashboard content area */
+/* Main content container with padding */
+.dashboard-content {
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.welcome-card {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.welcome-card h2 {
+  color: #333;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.welcome-card p {
+  color: #666;
+  font-size: 16px;
+  margin: 0;
+}
+
+.welcome-card .error {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 16px 20px;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .dashboard-content {
+    padding: 20px;
+  }
+
+  .welcome-card {
+    padding: 24px;
+  }
+
+  .welcome-card h2 {
+    font-size: 24px;
+  }
+}
