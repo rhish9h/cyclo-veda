@@ -67,7 +67,8 @@ def mock_user():
         User: Test user object with known properties
     """
     return User(
-        email="test@example.com",
+        email="user@example.com",  # Must match email in fake_users_db
+        username="testuser",
         hashed_password="$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",  # "secret"
         is_active=True
     )

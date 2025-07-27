@@ -84,9 +84,11 @@ class UserLogin(BaseModel):
     Used by the /auth/login endpoint to validate user credentials.
     Contains only the fields needed for authentication.
     
+    Note: Uses str instead of EmailStr for case-sensitive email authentication.
+    
     Currently used in: app.routers.auth.login_for_access_token
     """
-    email: EmailStr = Field(..., example="user@example.com")
+    email: str = Field(..., example="user@example.com", description="Email address (case-sensitive)")
     password: str = Field(..., example="securePassword123!")
 
 

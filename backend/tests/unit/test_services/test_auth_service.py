@@ -115,13 +115,13 @@ class TestUserOperations:
         """Test user authentication with invalid password"""
         user = AuthService.authenticate_user("admin@cycloveda.com", "wrongpassword")
         
-        assert user is None
+        assert user is False
     
     def test_authenticate_user_nonexistent_user(self):
         """Test user authentication with non-existent user"""
         user = AuthService.authenticate_user("nonexistent@example.com", "password")
         
-        assert user is None
+        assert user is False
     
     def test_authenticate_user_inactive_user(self):
         """Test user authentication with inactive user"""

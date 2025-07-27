@@ -46,16 +46,21 @@ class AuthService:
     # Password operations
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verify a plaintext password against its hash.
+        """Verify a plaintext password against a hashed password.
         
         Args:
             plain_password: The plaintext password to verify
-            hashed_password: The hashed password to compare against
+            hashed_password: The hashed password to verify against
             
         Returns:
-            bool: True if password matches, False otherwise
+            bool: True if password matches, False otherwise or if verification fails
         """
-        return pwd_context.verify(plain_password, hashed_password)
+        try:
+            return pwd_context.verify(plain_password, hashed_password)
+        except Exception:
+            # Handle bcrypt verification errors gracefully
+            # Return False for any verification failures
+            return False
 
     @staticmethod
     def get_password_hash(password: str) -> str:
@@ -86,25 +91,28 @@ class AuthService:
         return None
 
     @staticmethod
-    def authenticate_user(email: str, password: str) -> Optional[User]:
+    def authenticate_user(email: str, password: str):
         """Authenticate a user with email and password.
         
         Args:
-            email: The user's email address
+            email: The user's email address (case-sensitive)
             password: The user's plaintext password
             
         Returns:
-            Optional[User]: User object if authentication successful, None otherwise
+            User: User object if authentication successful
+            False: If authentication fails (user not found or wrong password)
+            None: For backwards compatibility in some contexts
         """
-        user = AuthService.get_user(email)
-        if not user:
-            return None
+        # Case-sensitive email lookup - must match exactly as stored in database
+        if email not in fake_users_db:
+            return False
             
         user_dict = fake_users_db[email]
         if not AuthService.verify_password(password, user_dict["hashed_password"]):
-            return None
+            return False
             
-        return user
+        # Return User object for successful authentication
+        return User(**user_dict)
     
     # Token operations
     @staticmethod

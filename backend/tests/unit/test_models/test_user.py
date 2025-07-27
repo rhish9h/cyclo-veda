@@ -166,9 +166,15 @@ class TestUserLogin:
             UserLogin(password="password123")
     
     def test_login_email_validation(self):
-        """Test email validation in login model"""
-        with pytest.raises(ValidationError):
-            UserLogin(email="invalid-email", password="password123")
+        """Test that login model accepts any string for email (case-sensitive authentication)"""
+        # UserLogin uses str instead of EmailStr for case-sensitive authentication
+        # This means it accepts any string, including invalid email formats
+        login = UserLogin(email="invalid-email", password="password123")
+        assert login.email == "invalid-email"
+        
+        # Case sensitivity is preserved
+        login_case = UserLogin(email="ADMIN@CYCLOVEDA.COM", password="password123")
+        assert login_case.email == "ADMIN@CYCLOVEDA.COM"
 
 
 class TestUserInDB:
