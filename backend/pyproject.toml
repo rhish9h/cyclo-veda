@@ -1,0 +1,182 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cyclo-veda-backend"
+version = "0.1.0"
+description = "Backend API for Cyclo Veda application"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    {name = "Cyclo Veda Team", email = "team@cycloveda.com"}
+]
+keywords = ["fastapi", "authentication", "api", "backend"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Framework :: FastAPI",
+]
+
+# Production dependencies (minimal for Docker)
+# Removed: python-multipart (no file uploads)
+# Removed: uvicorn[standard] extras for smaller image size
+dependencies = [
+    "fastapi>=0.116.0",
+    "uvicorn>=0.32.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-dotenv>=1.0.1",  # Required for loading .env files in local development
+]
+
+# Optional dependency groups
+[project.optional-dependencies]
+test = [
+    # Core testing framework
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    
+    # HTTP testing
+    "httpx>=0.28.0",
+    
+    # Code quality and formatting
+    "black>=24.10.0",
+    "isort>=5.13.0",
+    "flake8>=7.1.0",
+    "mypy>=1.13.0",
+    
+    # Coverage reporting
+    "coverage[toml]>=7.6.0",
+]
+
+dev = [
+    # Include all test dependencies
+    "cyclo-veda-backend[test]",
+    
+    # Additional development tools (optional)
+    # Moved pre-commit from test to dev, removed jupyter (too heavy), removed watchdog (not essential)
+    "pre-commit>=4.0.0",
+    "ipython>=8.30.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/cyclo-veda"
+Repository = "https://github.com/your-org/cyclo-veda.git"
+Issues = "https://github.com/your-org/cyclo-veda/issues"
+
+# Entry points for CLI commands (if needed in future)
+[project.scripts]
+cyclo-veda-server = "main:main"
+
+# Tool configurations
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=app",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "unit: Unit tests that test individual components in isolation",
+    "integration: Integration tests that test component interactions",
+    "auth: Authentication and authorization related tests",
+    "api: API endpoint tests",
+    "slow: Tests that take a long time to run",
+    "external: Tests that require external services",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "*/tests/*",
+    "*/venv/*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+show_missing = true
+skip_covered = false
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311', 'py312', 'py313']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["app"]
+known_third_party = ["fastapi", "pydantic", "uvicorn"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    "venv",
+]

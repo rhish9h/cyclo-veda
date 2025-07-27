@@ -38,6 +38,11 @@ class AuthService:
     - JWT token creation and validation
     """
     
+    # Class constants for test access
+    SECRET_KEY = SECRET_KEY
+    ALGORITHM = ALGORITHM
+    ACCESS_TOKEN_EXPIRE_MINUTES = ACCESS_TOKEN_EXPIRE_MINUTES
+    
     # Password operations
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -161,11 +166,13 @@ def _initialize_mock_users() -> None:
     # Test users for development
     test_users = {
         "admin@cycloveda.com": {
+            "username": "admin",
             "email": "admin@cycloveda.com",
             "hashed_password": test_password_hash,
             "is_active": True,
         },
         "user@example.com": {
+            "username": "testuser",
             "email": "user@example.com",
             "hashed_password": test_password_hash,
             "is_active": True,
