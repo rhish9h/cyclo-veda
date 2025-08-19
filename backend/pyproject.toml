@@ -32,8 +32,10 @@ dependencies = [
     "fastapi>=0.116.0",
     "uvicorn>=0.32.0",
     "python-jose[cryptography]>=3.3.0",
-    "passlib[bcrypt]>=1.7.4",
+    "passlib>=1.7.4",  # Remove bcrypt extra to avoid version conflicts
+    "bcrypt>=3.2.0,<4.0.0",  # Use older bcrypt version compatible with passlib
     "python-dotenv>=1.0.1",  # Required for loading .env files in local development
+    "email-validator>=2.1.0",  # Required for Pydantic email validation
 ]
 
 # Optional dependency groups

@@ -23,8 +23,9 @@
 
 2. **Set up Python environment**
    ```bash
-   poetry install
-   poetry shell
+   python -m venv venv
+   source venv/bin/activate  # Windows: .\venv\Scripts\activate
+   pip install -e ".[dev]"
    ```
 
 3. **Environment variables**
@@ -39,14 +40,9 @@
    DATABASE_URL=sqlite:///./sql_app.db
    ```
 
-4. **Run migrations**
+4. **Start the server**
    ```bash
-   alembic upgrade head
-   ```
-
-5. **Start the server**
-   ```bash
-   uvicorn app.main:app --reload
+   uvicorn main:app --reload
    ```
 
 ### Frontend Setup

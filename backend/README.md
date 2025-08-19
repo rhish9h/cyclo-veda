@@ -25,7 +25,7 @@ pip install -e ".[test]" # Testing only
 pip install .            # Production only
 
 # Run server
-python main.py
+uvicorn main:app --reload
 ```
 
 **API Available:** http://localhost:8000  
