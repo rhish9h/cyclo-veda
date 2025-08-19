@@ -6,12 +6,13 @@
  */
 
 /* Root container styles */
-/* Main application container with centered layout */
+/* Main application container with full viewport layout */
 #root {
-  max-width: 1280px; /* Maximum width for large screens */
-  margin: 0 auto; /* Center horizontally */
-  padding: 2rem;
-  text-align: center;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 /* Logo styles */
