@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 # Import routers
-from app.routers import auth
+from app.routers import auth, health
 
 # Load environment variables
 load_dotenv()
@@ -30,6 +30,9 @@ DEV_ORIGINS = [
     "http://127.0.0.1:5174",
     "http://localhost:5175",
     "http://127.0.0.1:5175",
+    # Docker hostnames
+    "http://cycloveda.local",
+    "https://cycloveda.local",
 ]
 
 
@@ -61,16 +64,6 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Health check endpoint
-@app.get("/", tags=["Health"])
-async def health_check():
-    """Health check endpoint to verify API is running."""
-    return {
-        "message": f"Welcome to {API_TITLE}",
-        "status": "healthy",
-        "version": API_VERSION,
-    }
-
-
-# Include API routers
+# Include routers
+app.include_router(health.router)  # Health endpoints at root level
 app.include_router(auth.router, prefix="/api", tags=["Authentication"])

@@ -4,6 +4,38 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Complete Docker containerization with multi-stage builds
+- Traefik reverse proxy for service routing and load balancing
+- Docker Compose configuration with production-ready setup
+- Dedicated `/health` endpoint for proper health monitoring
+- Comprehensive Docker documentation and deployment guide
+- Environment configuration with `.env.example`
+- Manual hostname setup instructions for Mac and Windows
+- Security hardening in Docker containers (non-root users)
+- CORS configuration for Docker hostnames
+
+### Changed
+- Backend upgraded to Python 3.13-slim Docker image (matching local development)
+- Health checks now use curl with dedicated `/health` endpoint instead of Python requests
+- Backend CORS origins updated to include Docker hostnames
+- Frontend configured to work with containerized backend API
+- Removed automated hostname setup script in favor of manual instructions
+- Moved health check endpoints to dedicated router (`app/routers/health.py`) for better organization
+
+### Fixed
+- Frontend Docker build now installs all dependencies (including devDependencies) needed for TypeScript compilation
+- Frontend now correctly uses `api.cycloveda.local` for API calls in Docker environment via build-time configuration
+
+### Removed  
+- `setup-hosts.sh` script (replaced with manual setup instructions)
+
+### Infrastructure
+- Frontend: React app served by Nginx on `cycloveda.local`
+- Backend: FastAPI application on `api.cycloveda.local`
+- Reverse Proxy: Traefik v3.0 with automatic service discovery
+- Network: Custom Docker network for service isolation
+
 ### Under Development
 - Advanced user management features
 - Enhanced dashboard functionality
