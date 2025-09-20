@@ -120,6 +120,7 @@ We will implement a complete Docker containerization strategy with:
 7. ✅ Implement dedicated health endpoints with proper architecture
 8. ✅ Configure build-time environment variables for frontend API URLs
 9. ✅ Fix TypeScript compilation in Docker builds
+10. ✅ Fix Content Security Policy to allow API connections
 
 ## Future Enhancements
 
@@ -139,3 +140,20 @@ We will implement a complete Docker containerization strategy with:
 - Foundation set for microservices architecture if needed
 
 This decision establishes a robust, scalable infrastructure foundation that will support the project's growth while maintaining developer productivity and operational excellence.
+
+## Post-Implementation Fixes
+
+### Content Security Policy (CSP) Issue
+**Issue**: Frontend login page unable to connect to API due to CSP blocking cross-domain requests.
+**Root Cause**: Nginx CSP header only allowed `default-src 'self'` without explicit `connect-src` directive.
+**Solution**: Added `connect-src 'self' http://api.cycloveda.local;` to CSP header in `frontend/nginx.conf`.
+**Files Modified**: `frontend/nginx.conf` line 37
+
+### CORS Headers Issue  
+**Issue**: Browser blocking API requests due to missing `Access-Control-Allow-Headers` in preflight responses.
+**Root Cause**: Traefik reverse proxy CORS middleware was missing `accesscontrolallowheaders` configuration, overriding FastAPI CORS.
+**Solution**: Added `accesscontrolallowheaders` directive to Traefik CORS middleware and removed FastAPI CORS middleware to avoid conflicts.
+**Architectural Decision**: CORS is handled at the Traefik level for centralized control and better performance.
+**Files Modified**: 
+- `docker-compose.yml` Traefik CORS configuration (line 54)
+- `backend/main.py` removed FastAPI CORS middleware

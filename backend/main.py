@@ -1,14 +1,13 @@
 """Main FastAPI application entry point for Cyclo Veda.
 
-This module sets up the FastAPI application with middleware, CORS configuration,
-and includes all API routers.
+This module sets up the FastAPI application and includes all API routers.
+CORS is handled at the Traefik reverse proxy level.
 """
 
 import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 # Import routers
@@ -21,20 +20,6 @@ load_dotenv()
 API_VERSION = "0.1.0"
 API_TITLE = "Cyclo Veda API"
 API_DESCRIPTION = "Backend API for Cyclo Veda Application"
-
-# Development CORS origins
-DEV_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://localhost:5175",
-    "http://127.0.0.1:5175",
-    # Docker hostnames
-    "http://cycloveda.local",
-    "https://cycloveda.local",
-]
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,16 +37,6 @@ app = FastAPI(
     description=API_DESCRIPTION,
     version=API_VERSION,
     lifespan=lifespan,
-)
-
-# Configure CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=DEV_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-    expose_headers=["*"],
 )
 
 # Include routers

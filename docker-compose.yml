@@ -51,6 +51,7 @@ services:
       # CORS middleware
       - "traefik.http.middlewares.cors.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE"
       - "traefik.http.middlewares.cors.headers.accesscontrolalloworiginlist=http://cycloveda.local,https://cycloveda.local"
+      - "traefik.http.middlewares.cors.headers.accesscontrolallowheaders=Accept,Accept-Language,Content-Language,Content-Type,Authorization,Cache-Control,X-Requested-With"
       - "traefik.http.middlewares.cors.headers.accesscontrolmaxage=100"
       - "traefik.http.middlewares.cors.headers.addvaryheader=true"
       - "traefik.http.routers.backend.middlewares=cors"
