@@ -4,28 +4,40 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 
 ## [Unreleased]
 
+### Under Development
+- Advanced user management features
+- Enhanced dashboard functionality
+- API documentation improvements
+
+## [0.4.0] - 2025-09-20
+
 ### Added
 - Complete Docker containerization with multi-stage builds
 - Traefik reverse proxy for service routing and load balancing
 - Docker Compose configuration with production-ready setup
 - Dedicated `/health` endpoint for proper health monitoring
+- Health router: Moved health endpoints from `main.py` to dedicated `app/routers/health.py` for better code organization
 - Comprehensive Docker documentation and deployment guide
 - Environment configuration with `.env.example`
 - Manual hostname setup instructions for Mac and Windows
 - Security hardening in Docker containers (non-root users)
 - CORS configuration for Docker hostnames
+- Content Security Policy (CSP) configuration in Nginx
 
 ### Changed
-- Backend upgraded to Python 3.13-slim Docker image (matching local development)
+- Backend uses Python 3.9+ compatible Docker image (supports 3.9-3.13)
 - Health checks now use curl with dedicated `/health` endpoint instead of Python requests
 - Backend CORS origins updated to include Docker hostnames
 - Frontend configured to work with containerized backend API
 - Removed automated hostname setup script in favor of manual instructions
-- Moved health check endpoints to dedicated router (`app/routers/health.py`) for better organization
+- Centralized CORS handling at Traefik reverse proxy level for better performance and consistency
+- Removed FastAPI CORS middleware to avoid conflicts with Traefik CORS configuration
 
 ### Fixed
 - Frontend Docker build now installs all dependencies (including devDependencies) needed for TypeScript compilation
 - Frontend now correctly uses `api.cycloveda.local` for API calls in Docker environment via build-time configuration
+- Content Security Policy to allow API connections from frontend
+- CORS headers in Traefik to properly handle preflight requests
 
 ### Removed  
 - `setup-hosts.sh` script (replaced with manual setup instructions)
@@ -36,34 +48,25 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 - Reverse Proxy: Traefik v3.0 with automatic service discovery
 - Network: Custom Docker network for service isolation
 
-### Under Development
-- Advanced user management features
-- Enhanced dashboard functionality
-- API documentation improvements
-
-## [0.3.0] - 2025-04-20
+## [0.3.0] - 2025-08-18
 
 ### Added
 - Login interface CSS improvements and visual enhancements
 - Enhanced UI/UX with better styling and user experience
-- Improved frontend documentation structure
+- Comprehensive project documentation framework
+- ADR (Architectural Decision Records) system
+- JWT Authentication ADR
+- API reference documentation
+- Architecture documentation
+- Authentication guide
+- Development guide
 
 ### Changed
 - Refined login page styling for better visual appeal
 - Enhanced CSS organization and maintainability
+- Improved documentation structure and organization
 
-## [0.2.1] - 2025-04-20
-
-### Added
-- Comprehensive project documentation framework
-- Setup and installation guides
-- Frontend-specific documentation
-
-### Fixed
-- Documentation structure and organization
-- Setup instructions and dependencies
-
-## [0.2.0] - 2025-02-06
+## [0.2.0] - 2025-07-26
 
 ### Added
 - Complete React + TypeScript frontend application
@@ -97,7 +100,7 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 - Password hashing compatibility issues
 - Token validation security improvements
 
-## [0.1.0] - 2025-01-23
+## [0.1.0] - 2025-07-19
 
 ### Added
 - Initial project boilerplate and structure
@@ -106,8 +109,8 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 - Git repository initialization
 - Basic project configuration
 
-[Unreleased]: https://github.com/rhish9h/cyclo-veda/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.2.1...v0.3.0
-[0.2.1]: https://github.com/rhish9h/cyclo-veda/compare/v0.2.0...v0.2.1
+[Unreleased]: https://github.com/rhish9h/cyclo-veda/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/rhish9h/cyclo-veda/releases/tag/v0.1.0
