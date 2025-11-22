@@ -18,7 +18,7 @@ import './App.css';
 
 // Lazy load components for better performance
 const Login = lazy(() => import('./components/auth/Login'));
-const Dashboard = lazy(() => import('./components/layout/Dashboard'));
+const Dashboard = lazy(() => import('./components/layout/Dashboard/Dashboard'));
 
 /**
  * Loading component displayed during lazy loading

@@ -15,8 +15,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
-import { API_BASE_URL } from '../../constants';
+import { useAuth } from '../../../hooks/useAuth';
+import { API_BASE_URL } from '../../../constants';
 import './Dashboard.css';
 
 /**
