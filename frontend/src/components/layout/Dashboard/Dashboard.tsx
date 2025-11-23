@@ -75,15 +75,17 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className='dashboard'>
-      {/* Dashboard header with title and logout button */}
+      {/* Dashboard header with title and action button */}
       <header className='dashboard-header'>
         <h1>Cyclo Veda Dashboard</h1>
-        <button onClick={handleSettings} className='settings-button'>
-          Settings
-        </button>
-        <button onClick={handleLogout} className='logout-button'>
-          Logout
-        </button>
+        <div className='dashboard-header-actions'>
+          <button onClick={handleSettings} className='settings-button'>
+            Settings
+          </button>
+          <button onClick={handleLogout} className='logout-button'>
+            Logout
+          </button>
+        </div>
       </header>
 
       {/* Main dashboard content area */}

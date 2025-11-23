@@ -21,13 +21,21 @@
 }
 
 /* Dashboard header */
-/* Top navigation bar with title and logout button */
+/* Top navigation bar with title and action buttons */
 .dashboard-header {
   background: white;
   padding: 20px 40px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
   display: flex;
-  justify-content: space-between; /* Space between title and logout */
+  justify-content: space-between; /* Space between title and action buttons */
+  align-items: center;
+}
+
+/* Header actions container */
+/* Wraps action buttons together - Settings and Logout */
+.dashboard-header-actions {
+  display: flex;
+  gap: 12px;
   align-items: center;
 }
 
@@ -38,6 +46,25 @@
   font-size: 24px;
   font-weight: 700;
   margin: 0;
+}
+
+/* Settings button */
+/* Settings button with hover effects to navigate to settings page */
+.settings-button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease; /* smooth hover transition */
+}
+
+.settings-button:hover {
+  background: #5a6268; /* Darker gray on hover */
+  transform: translateY(-1px); /* Subtle lift effect */
 }
 
 /* Logout button */
