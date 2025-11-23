@@ -9,6 +9,45 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 - Enhanced dashboard functionality
 - API documentation improvements
 
+## [0.5.0] - 2025-11-23
+
+### Added
+- Complete Settings management system with multi-section interface:
+  - Profile information management (name, email, phone)
+  - Security settings (password change functionality)
+  - App preferences (theme, language, timezone selection)
+  - Notification preferences (email, push, marketing toggles)
+  - Third-party service connections section
+- ConnectionCard component for managing external integrations:
+  - Reusable component design for third-party services
+  - Connection status display and management
+  - Prepared for Strava integration with sync activities toggle
+- Enhanced Layout system with improved component architecture:
+  - Configurable header/footer display via props
+  - Dedicated Header, Footer, and Sidebar subcomponents
+  - Flexible layout customization for different page types
+- Complete CSS Modules implementation across all components:
+  - Full migration from traditional CSS to CSS Modules
+  - Scoped styling preventing class name conflicts
+  - TypeScript integration with CSS module imports
+  - camelCase class naming convention for consistency
+- Improved component composition patterns:
+  - Better separation of concerns in layout components
+  - Reusable component architecture for settings management
+  - Enhanced form handling with TypeScript interfaces
+
+### Changed
+- Settings page now uses comprehensive state management with typed interfaces
+- All styling converted to CSS Modules for better maintainability
+- Layout component enhanced with prop-based customization
+- Component structure improved with better directory organization
+
+### Infrastructure
+- Frontend components now fully utilize CSS Modules architecture
+- Settings system ready for backend API integration
+- ConnectionCard component prepared for multiple third-party service integrations
+- Enhanced Layout system supporting varied page layouts
+
 ## [0.4.0] - 2025-09-20
 
 ### Added
@@ -109,7 +148,8 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 - Git repository initialization
 - Basic project configuration
 
-[Unreleased]: https://github.com/rhish9h/cyclo-veda/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/rhish9h/cyclo-veda/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.1.0...v0.2.0
