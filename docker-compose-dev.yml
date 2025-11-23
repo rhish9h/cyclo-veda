@@ -1,0 +1,77 @@
+services:
+  # Traefik reverse proxy
+  traefik:
+    image: traefik:v3.0
+    container_name: cyclo-veda-traefik-dev
+    command:
+      # Enable Docker provider
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      # Configure entrypoints
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # Enable dashboard (optional)
+      - --api.dashboard=true
+      - --api.insecure=true
+      # Configure certificate resolver for Let's Encrypt (disabled for local dev)
+      # - --certificatesresolvers.letsencrypt.acme.email=admin@cycloveda.com
+      # - --certificatesresolvers.letsencrypt.acme.storage=/acme.json
+      # - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+    ports:
+      - "80:80"      # HTTP
+      - "443:443"    # HTTPS
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik-data:/data
+    networks:
+      - cyclo-veda
+    restart: unless-stopped
+
+  # Backend API service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cyclo-veda-backend-dev
+    environment:
+      - PYTHONPATH=/app
+      - SECRET_KEY=your-secret-key-change-this-in-production
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    labels:
+      - "traefik.enable=true"
+      # HTTP router
+      - "traefik.http.routers.backend.rule=Host(`api.cycloveda.local`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+      # HTTPS router (commented out for local development)
+      # - "traefik.http.routers.backend-secure.rule=Host(`api.cycloveda.local`)"
+      # - "traefik.http.routers.backend-secure.entrypoints=websecure"
+      # - "traefik.http.routers.backend-secure.tls=true"
+      # CORS middleware
+      - "traefik.http.middlewares.cors.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE"
+      - "traefik.http.middlewares.cors.headers.accesscontrolalloworiginlist=http://localhost:5173,http://cycloveda.local,https://cycloveda.local"
+      - "traefik.http.middlewares.cors.headers.accesscontrolallowheaders=Accept,Accept-Language,Content-Language,Content-Type,Authorization,Cache-Control,X-Requested-With"
+      - "traefik.http.middlewares.cors.headers.accesscontrolmaxage=100"
+      - "traefik.http.middlewares.cors.headers.addvaryheader=true"
+      - "traefik.http.routers.backend.middlewares=cors"
+    networks:
+      - cyclo-veda
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend web application - Run it locally for the fastest hot reloads - make sure to match the node version
+
+networks:
+  cyclo-veda:
+    driver: bridge
+    name: cyclo-veda-network
+
+volumes:
+  traefik-data:
+    driver: local
