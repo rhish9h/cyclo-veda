@@ -15,8 +15,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
-import { API_BASE_URL } from '../../../constants';
+// import { API_BASE_URL } from '../../../constants';
+import { ROUTES } from '../../../constants';
 import './Dashboard.css';
 
 /**
@@ -32,6 +34,8 @@ const Dashboard: React.FC = () => {
   // Authentication context for user data and logout functionality
   const { user, logout } = useAuth();
 
+  const navigate = useNavigate();
+
   /**
    * Effect hook to fetch data from protected backend endpoint on component mount
    * Demonstrates integration with authenticated API calls
@@ -39,24 +43,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Get token from localStorage (TODO: Consider using auth context token)
-        const token = localStorage.getItem('token');
-
-        // Make authenticated request to protected endpoint
-        const response = await fetch(`${API_BASE_URL}/api/hello/World`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        // Check if request was successful
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        // Parse and set response data
-        const data = await response.json();
-        setMessage(data.message);
+        setMessage("Ready to Ride?");
       } catch (err) {
         // Handle and display errors
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -79,11 +66,21 @@ const Dashboard: React.FC = () => {
     logout();
   };
 
+  /**
+   * Handles navigation to Settings page
+   */
+  const handleSettings = () => {
+    navigate(ROUTES.SETTINGS);
+  }
+
   return (
     <div className='dashboard'>
       {/* Dashboard header with title and logout button */}
       <header className='dashboard-header'>
         <h1>Cyclo Veda Dashboard</h1>
+        <button onClick={handleSettings} className='settings-button'>
+          Settings
+        </button>
         <button onClick={handleLogout} className='logout-button'>
           Logout
         </button>
@@ -100,7 +97,7 @@ const Dashboard: React.FC = () => {
           ) : error ? (
             <p className='error'>Error: {error}</p>
           ) : (
-            <p>Backend says: {message}</p>
+            <p>{message}</p>
           )}
         </div>
 

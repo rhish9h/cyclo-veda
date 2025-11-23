@@ -19,6 +19,7 @@ import './App.css';
 // Lazy load components for better performance
 const Login = lazy(() => import('./components/auth/Login'));
 const Dashboard = lazy(() => import('./components/layout/Dashboard/Dashboard'));
+const Settings = lazy(() => import('./components/layout/Settings/Settings'));
 
 /**
  * Loading component displayed during lazy loading
@@ -90,6 +91,17 @@ function App() {
                 <RouteErrorBoundary>
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                </RouteErrorBoundary>
+              }
+            />
+
+            <Route
+              path={ROUTES.SETTINGS}
+              element={
+                <RouteErrorBoundary>
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 </RouteErrorBoundary>
               }
