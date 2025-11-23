@@ -1,0 +1,283 @@
+/**
+ * Layout Component Styles - CSS Module
+ * 
+ * Comprehensive styling for the main application layout.
+ * Features responsive design, modern UI, and consistent spacing.
+ * 
+ * Structure:
+ * - Layout container and main grid
+ * - Header with navigation and actions
+ * - Sidebar with navigation menu
+ * - Content area with responsive behavior
+ * - Footer with app information
+ * - Mobile-responsive design
+ */
+
+/* Layout container */
+.layoutContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+}
+
+/* Main layout area (sidebar + content) */
+.layoutMain {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Header Styles */
+.layoutHeader {
+  background: white;
+  padding: 20px 40px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  position: relative;
+}
+
+.layoutHeaderTitle {
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.layoutHeaderActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.layoutHeaderButton {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.settingsButton {
+  background: #6c757d;
+  color: white;
+}
+
+.settingsButton:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.logoutButton {
+  background: #dc3545;
+  color: white;
+}
+
+.logoutButton:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+/* Sidebar Styles */
+.layoutSidebar {
+  width: 250px;
+  background: white;
+  border-right: 1px solid #e9ecef;
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.layoutSidebar.closed {
+  transform: translateX(-100%);
+}
+
+.sidebarNav {
+  padding: 20px 0;
+}
+
+.navList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navItem {
+  margin-bottom: 4px;
+}
+
+.navButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-size: 14px;
+  color: #495057;
+}
+
+.navButton:hover {
+  background: #f8f9fa;
+  color: #007bff;
+}
+
+.navButton.active {
+  background: #e3f2fd;
+  color: #1976d2;
+  border-right: 3px solid #1976d2;
+}
+
+.navIcon {
+  margin-right: 12px;
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.navLabel {
+  font-weight: 500;
+}
+
+/* Content Area Styles */
+.layoutContent {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  transition: margin-left 0.3s ease;
+}
+
+.layoutContent.withSidebar {
+  margin-left: 0;
+}
+
+.layoutContent.fullWidth {
+  margin-left: 0;
+}
+
+/* Mobile sidebar toggle */
+.sidebarToggle {
+  display: none;
+  position: fixed;
+  top: 80px;
+  left: 20px;
+  z-index: 1000;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sidebarToggle:hover {
+  background: #0056b3;
+}
+
+/* Footer Styles */
+.layoutFooter {
+  background: white;
+  border-top: 1px solid #e9ecef;
+  padding: 20px 40px;
+  margin-top: auto;
+}
+
+.footerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footerText {
+  color: #6c757d;
+  font-size: 14px;
+  margin: 0;
+}
+
+.footerVersion {
+  color: #6c757d;
+  font-size: 12px;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .layoutHeader {
+    padding: 16px 20px;
+  }
+  
+  .layoutHeaderTitle {
+    font-size: 20px;
+  }
+  
+  .layoutHeaderActions {
+    gap: 8px;
+  }
+  
+  .layoutHeaderButton {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  .layoutSidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 999;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .layoutContent {
+    padding: 20px;
+  }
+  
+  .sidebarToggle {
+    display: block;
+  }
+  
+  .footerContent {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .layoutHeader {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+  
+  .layoutContent {
+    padding: 16px;
+  }
+  
+  .layoutFooter {
+    padding: 16px 20px;
+  }
+}
+
+/* Animation for sidebar open/close */
+@media (max-width: 768px) {
+  .layoutSidebar.open {
+    transform: translateX(0);
+  }
+  
+  .layoutSidebar.closed {
+    transform: translateX(-100%);
+  }
+}

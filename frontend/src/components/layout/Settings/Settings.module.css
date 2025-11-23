@@ -1,0 +1,296 @@
+/**
+ * Settings Component Styles - CSS Module
+ * 
+ * Comprehensive styling for the settings page.
+ * Features clean form design, navigation sidebar, and responsive layout.
+ * 
+ * Structure:
+ * - Settings container and layout grid
+ * - Settings navigation sidebar
+ * - Settings content area with forms
+ * - Form elements and interactive states
+ * - Responsive design for mobile
+ */
+
+/* Settings container */
+.settingsContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Settings layout grid */
+.settingsLayout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: 600px;
+}
+
+/* Settings sidebar */
+.settingsSidebar {
+  background: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  padding: 0;
+}
+
+.settingsNav {
+  padding: 20px 0;
+}
+
+.settingsNavList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.settingsNavItem {
+  margin-bottom: 4px;
+}
+
+.settingsNavButton {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  color: #495057;
+  gap: 12px;
+}
+
+.settingsNavButton:hover {
+  background: #e9ecef;
+  color: #007bff;
+}
+
+.settingsNavButton.active {
+  background: #e3f2fd;
+  color: #1976d2;
+  border-right: 3px solid #1976d2;
+}
+
+.settingsNavIcon {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.settingsNavText {
+  flex: 1;
+}
+
+.settingsNavTitle {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.settingsNavDescription {
+  display: block;
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+/* Settings content area */
+.settingsContent {
+  padding: 40px;
+  overflow-y: auto;
+}
+
+.settingsSectionContent {
+  max-width: 600px;
+}
+
+.settingsSectionContent h3 {
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+/* Settings form styles */
+.settingsForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formGroup label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.formGroup input[type='text'],
+.formGroup input[type='email'],
+.formGroup input[type='password'],
+.formGroup select {
+  padding: 12px 16px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.formGroup input:disabled {
+  background: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.formGroup small {
+  color: #6c757d;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Checkbox group styling */
+.checkboxGroup {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.checkboxGroup label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.checkboxGroup input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: #007bff;
+}
+
+/* Save button */
+.saveButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+.saveButton:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+}
+
+.saveButton:active {
+  transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .settingsLayout {
+    grid-template-columns: 1fr;
+  }
+  
+  .settingsSidebar {
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .settingsNav {
+    padding: 0;
+  }
+  
+  .settingsNavButton {
+    padding: 12px 20px;
+  }
+  
+  .settingsNavText {
+    display: none;
+  }
+  
+  .settingsNavIcon {
+    margin-top: 0;
+  }
+  
+  .settingsContent {
+    padding: 20px;
+  }
+  
+  .settingsSectionContent h3 {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .settingsContainer {
+    border-radius: 0;
+    box-shadow: none;
+    margin: -20px;
+  }
+  
+  .settingsContent {
+    padding: 16px;
+  }
+  
+  .settingsForm {
+    gap: 16px;
+  }
+  
+  .formGroup input,
+  .formGroup select {
+    padding: 10px 12px;
+  }
+  
+  .saveButton {
+    width: 100%;
+    align-self: stretch;
+  }
+}
+
+/* Animation for section transitions */
+.settingsSectionContent {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

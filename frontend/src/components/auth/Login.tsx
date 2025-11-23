@@ -18,7 +18,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import type { LoginCredentials } from '../../types/auth';
-import './Login.css';
+import styles from './Login.module.css';
 
 /**
  * Login form component with authentication handling
@@ -73,18 +73,18 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className='login-container'>
-      <div className='login-card'>
+    <div className={styles.loginContainer}>
+      <div className={styles.loginCard}>
         {/* Login form header with branding and instructions */}
-        <div className='login-header'>
+        <div className={styles.loginHeader}>
           <h1>Welcome to Cyclo Veda</h1>
           <p>Sign in to your account</p>
         </div>
 
         {/* Main login form with email/password fields */}
-        <form onSubmit={handleSubmit} className='login-form'>
+        <form onSubmit={handleSubmit} className={styles.loginForm}>
           {/* Email input field */}
-          <div className='form-group'>
+          <div className={styles.formGroup}>
             <label htmlFor='email'>Email</label>
             <input
               type='email'
@@ -99,7 +99,7 @@ const Login: React.FC = () => {
           </div>
 
           {/* Password input field */}
-          <div className='form-group'>
+          <div className={styles.formGroup}>
             <label htmlFor='password'>Password</label>
             <input
               type='password'
@@ -114,21 +114,21 @@ const Login: React.FC = () => {
           </div>
 
           {/* Error message display - only shown when there's an error */}
-          {error && <div className='error-message'>{error}</div>}
+          {error && <div className={styles.errorMessage}>{error}</div>}
 
           {/* Submit button with loading state */}
-          <button type='submit' className='login-button' disabled={isLoading}>
+          <button type='submit' className={styles.loginButton} disabled={isLoading}>
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         {/* Footer with registration link (placeholder for future feature) */}
-        <div className='login-footer'>
+        <div className={styles.loginFooter}>
           <p>
             Don't have an account?
             <button
               type='button'
-              className='link-button'
+              className={styles.linkButton}
               onClick={() => navigate('/register')} // TODO: Implement registration page
             >
               Sign up

@@ -15,11 +15,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 // import { API_BASE_URL } from '../../../constants';
-import { ROUTES } from '../../../constants';
-import './Dashboard.css';
+import Layout from '../Layout/Layout';
+import styles from './Dashboard.module.css';
 
 /**
  * Dashboard component for authenticated users
@@ -31,10 +30,8 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true); // Loading state for API calls
   const [error, setError] = useState(''); // Error state for failed API calls
 
-  // Authentication context for user data and logout functionality
-  const { user, logout } = useAuth();
-
-  const navigate = useNavigate();
+  // Authentication context for user data
+  const { user } = useAuth();
 
   /**
    * Effect hook to fetch data from protected backend endpoint on component mount
@@ -58,46 +55,19 @@ const Dashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  /**
-   * Handles user logout
-   * Calls the logout function from auth context which clears tokens and redirects
-   */
-  const handleLogout = () => {
-    logout();
-  };
-
-  /**
-   * Handles navigation to Settings page
-   */
-  const handleSettings = () => {
-    navigate(ROUTES.SETTINGS);
-  }
 
   return (
-    <div className='dashboard'>
-      {/* Dashboard header with title and action button */}
-      <header className='dashboard-header'>
-        <h1>Cyclo Veda Dashboard</h1>
-        <div className='dashboard-header-actions'>
-          <button onClick={handleSettings} className='settings-button'>
-            Settings
-          </button>
-          <button onClick={handleLogout} className='logout-button'>
-            Logout
-          </button>
-        </div>
-      </header>
-
+    <Layout title="Cyclo Veda Dashboard">
       {/* Main dashboard content area */}
-      <main className='dashboard-content'>
-        <div className='welcome-card'>
+      <div className={styles.dashboardContent}>
+        <div className={styles.welcomeCard}>
           <h2>Welcome back{user?.email ? `, ${user.email}` : ''}!</h2>
 
           {/* Conditional rendering based on loading/error/success states */}
           {loading ? (
             <p>Loading...</p>
           ) : error ? (
-            <p className='error'>Error: {error}</p>
+            <p className={`${styles.welcomeCard} ${styles.error}`}>Error: {error}</p>
           ) : (
             <p>{message}</p>
           )}
@@ -105,8 +75,8 @@ const Dashboard: React.FC = () => {
 
         {/* TODO: Add more dashboard widgets and functionality here */}
         {/* Examples: Recent activity, statistics, quick actions, etc. */}
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 };
 

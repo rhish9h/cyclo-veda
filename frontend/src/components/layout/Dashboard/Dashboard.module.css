@@ -1,0 +1,58 @@
+/**
+ * Dashboard Component Styles - CSS Module
+ * 
+ * This file contains all styles for the Dashboard component.
+ * Features clean, professional design with proper spacing,
+ * typography, and interactive elements for the main app interface.
+ * 
+ * Structure:
+ * - Dashboard content area with cards and widgets
+ * - Interactive elements and hover states
+ * - Responsive design considerations
+ * 
+ * Note: Header, sidebar, and layout styles are now handled by Layout.module.css
+ */
+
+/* Dashboard content area */
+/* Main content container - padding handled by Layout, this adds max-width and centering */
+.dashboardContent {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.welcomeCard {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.welcomeCard h2 {
+  color: #333;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.welcomeCard p {
+  color: #666;
+  font-size: 16px;
+  margin: 0;
+}
+
+.welcomeCard .error {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .welcomeCard {
+    padding: 24px;
+  }
+
+  .welcomeCard h2 {
+    font-size: 24px;
+  }
+}

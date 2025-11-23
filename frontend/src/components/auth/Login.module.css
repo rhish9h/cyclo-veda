@@ -101,7 +101,7 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
 }
 
-.login-header p {
+.loginHeader p {
   color: #6b7280;
   font-size: 16px;
   margin: 0;
@@ -110,19 +110,19 @@
   line-height: 1.4;
 }
 
-.login-form {
+.loginForm {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-.form-group {
+.formGroup {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.form-group label {
+.formGroup label {
   color: #374151;
   font-weight: 500;
   font-size: 14px;
@@ -130,7 +130,7 @@
   letter-spacing: 0.01em;
 }
 
-.form-group input {
+.formGroup input {
   padding: 14px 16px;
   border: 1.5px solid #e5e7eb;
   border-radius: 12px;
@@ -144,7 +144,7 @@
   box-sizing: border-box;
 }
 
-.form-group input:focus {
+.formGroup input:focus {
   outline: none;
   border-color: #6366f1;
   background: rgba(255, 255, 255, 0.95);
@@ -154,18 +154,18 @@
   transform: translateY(-1px);
 }
 
-.form-group input::placeholder {
+.formGroup input::placeholder {
   color: #9ca3af;
   font-weight: 400;
 }
 
-.form-group input:disabled {
+.formGroup input:disabled {
   background: #f5f5f5;
   cursor: not-allowed;
   opacity: 0.7;
 }
 
-.error-message {
+.errorMessage {
   background: rgba(254, 242, 242, 0.9);
   color: #dc2626;
   padding: 16px 20px;
@@ -206,43 +206,43 @@
   transition: left 0.5s;
 }
 
-.login-button:hover:not(:disabled) {
+.loginButton:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 
     0 20px 40px rgba(99, 102, 241, 0.4),
     0 8px 16px rgba(99, 102, 241, 0.3);
 }
 
-.login-button:hover:not(:disabled)::before {
+.loginButton:hover:not(:disabled)::before {
   left: 100%;
 }
 
-.login-button:active {
+.loginButton:active {
   transform: translateY(-1px);
 }
 
-.login-button:disabled {
+.loginButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-.login-footer {
+.loginFooter {
   text-align: center;
   margin-top: 24px;
   padding-top: 24px;
   border-top: 1px solid rgba(229, 231, 235, 0.6);
 }
 
-.login-footer p {
+.loginFooter p {
   color: #6b7280;
   font-size: 14px;
   margin: 0;
   font-weight: 400;
 }
 
-.link-button {
+.linkButton {
   background: none;
   border: none;
   color: #6366f1;
@@ -266,42 +266,42 @@
   transition: width 0.3s ease;
 }
 
-.link-button:hover {
+.linkButton:hover {
   color: #4f46e5;
   transform: translateY(-1px);
 }
 
-.link-button:hover::after {
+.linkButton:hover::after {
   width: 100%;
 }
 
 /* Responsive design */
 /* Desktop (1024px and up) */
 @media (min-width: 1024px) {
-  .login-card {
+  .loginCard {
     max-width: 380px;
     padding: 48px 40px;
   }
 
-  .login-header {
+  .loginHeader {
     margin-bottom: 36px;
   }
 
-  .login-header h1 {
+  .loginHeader h1 {
     font-size: 30px;
   }
 
-  .login-header p {
+  .loginHeader p {
     font-size: 17px;
   }
 
-  .form-group input {
+  .formGroup input {
     height: 52px;
     font-size: 17px;
     padding: 16px 18px;
   }
 
-  .login-button {
+  .loginButton {
     height: 52px;
     font-size: 17px;
   }
@@ -309,85 +309,85 @@
 
 /* Tablet (768px to 1023px) */
 @media (min-width: 768px) and (max-width: 1023px) {
-  .login-container {
+  .loginContainer {
     padding: 32px;
   }
 
-  .login-card {
+  .loginCard {
     max-width: 360px;
     padding: 44px 36px;
   }
 
-  .login-header h1 {
+  .loginHeader h1 {
     font-size: 29px;
   }
 
-  .login-header p {
+  .loginHeader p {
     font-size: 16px;
   }
 
-  .form-group input {
+  .formGroup input {
     height: 50px;
   }
 
-  .login-button {
+  .loginButton {
     height: 50px;
   }
 }
 
 /* Small tablet (481px to 767px) */
 @media (min-width: 481px) and (max-width: 767px) {
-  .login-container {
+  .loginContainer {
     padding: 24px;
   }
 
-  .login-card {
+  .loginCard {
     max-width: 340px;
     padding: 36px 28px;
   }
 
-  .login-header h1 {
+  .loginHeader h1 {
     font-size: 26px;
   }
 }
 
 /* Mobile (480px and below) */
 @media (max-width: 480px) {
-  .login-container {
+  .loginContainer {
     padding: 16px;
   }
 
-  .login-card {
+  .loginCard {
     padding: 32px 24px;
     max-width: 100%;
     border-radius: 16px;
   }
 
-  .login-header {
+  .loginHeader {
     margin-bottom: 28px;
   }
 
-  .login-header h1 {
+  .loginHeader h1 {
     font-size: 24px;
   }
 
-  .login-header p {
+  .loginHeader p {
     font-size: 15px;
   }
 
-  .form-group input {
+  .formGroup input {
     height: 44px;
     font-size: 16px;
     padding: 12px 16px;
   }
 
-  .login-button {
+  .loginButton {
     height: 44px;
     font-size: 16px;
     padding: 12px 20px;
   }
 
-  .login-footer {
+  .loginFooter {
     margin-top: 20px;
     padding-top: 20px;
   }
