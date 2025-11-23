@@ -15,7 +15,7 @@
 
 /* Main login container */
 /* Premium full-screen layout with sophisticated background */
-.login-container {
+.loginContainer {
   position: fixed;
   top: 0;
   left: 0;
@@ -36,7 +36,7 @@
 
 /* Login card container */
 /* Premium glassmorphism card with optimized proportions */
-.login-card {
+.loginCard {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -55,7 +55,7 @@
 }
 
 /* Subtle glow effect behind card */
-.login-card::before {
+.loginCard::before {
   content: '';
   position: absolute;
   top: -2px;
@@ -82,12 +82,12 @@
 
 /* Login header section */
 /* Clean header with optimal proportions */
-.login-header {
+.loginHeader {
   text-align: center;
   margin-bottom: 32px;
 }
 
-.login-header h1 {
+.loginHeader h1 {
   color: #1a1a1a;
   font-size: 28px;
   font-weight: 600;
