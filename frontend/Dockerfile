@@ -1,5 +1,5 @@
 # Multi-stage build for React app
-FROM node:18-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Build argument for API URL
 ARG VITE_API_BASE_URL=http://api.cycloveda.local
