@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import Layout from '../Layout/Layout';
 import styles from './Settings.module.css';
+import ConnectionCard from './ConnectionCard/ConnectionCard';
 
 interface SettingsData {
   profile: {
@@ -30,6 +31,13 @@ interface SettingsData {
     email: boolean;
     push: boolean;
     marketing: boolean;
+  };
+  connections: {
+    strava: {
+      connected: boolean;
+      connectedAt?: string;
+      syncActivities: boolean;
+    };
   };
 }
 
@@ -59,6 +67,13 @@ const Settings: React.FC = () => {
       email: true,
       push: true,
       marketing: false
+    },
+    connections: {
+      strava: {
+        connected: false,
+        connectedAt: "",
+        syncActivities: false
+      }
     }
   });
 
@@ -89,6 +104,12 @@ const Settings: React.FC = () => {
       title: 'Notifications',
       icon: '🔔',
       description: 'Email and push notification preferences'
+    },
+    {
+      id: 'connections',
+      title: 'Connections',
+      icon: '🔗',
+      description: 'Third-party service integrations'
     }
   ];
 
@@ -298,6 +319,21 @@ const Settings: React.FC = () => {
                 Save Notification Settings
               </button>
             </form>
+          </div>
+        );
+
+      case 'connections':
+        return (
+          <div className={styles.settingsSectionContent}>
+            <ConnectionCard
+              service='Strava'
+              isConnected={false}
+              connectedAt=""
+              syncActivities={false}
+              onConnect={() => {}}
+              onDisconnect={() => {}}
+              onSyncToggle={() => {}}
+            />
           </div>
         );
 

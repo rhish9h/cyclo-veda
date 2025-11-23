@@ -1,0 +1,53 @@
+/**
+ * ConnectionCard Component Styles - CSS Module
+ * 
+ * Basic styling for the connection card component.
+ * This is a minimal version to ensure visibility and proper layout.
+ * 
+ * Structure:
+ * - Connection card container with background and border
+ * - Typography styling for headings and paragraphs
+ */
+
+/* Main connection card container */
+.connectionCard {
+  background: white; /* White background to make it visible */
+  border: 1px solid #e9ecef; /* Light gray border */
+  border-radius: 12px; /* Rounded corners */
+  padding: 24px; /* Inner spacing */
+  margin-bottom: 20px; /* Space below the card */
+}
+
+/* Card heading styling */
+.connectionCard h3 {
+  color: #212529; /* Dark text color */
+  margin: 0 0 12px 0; /* Remove default margin, add bottom spacing */
+  font-size: 18px; /* Readable heading size */
+  font-weight: 600; /* Semi-bold heading */
+}
+
+/* Card paragraph text styling */
+.connectionCard p {
+  color: #6c757d; /* Medium gray for secondary text */
+  margin: 0 0 16px 0; /* Remove default margin */
+  font-size: 14px; /* Readable text size */
+  line-height: 1.5; /* Good line spacing */
+}
+
+/* Action button styling */
+.actionButton {
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.actionButton:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
