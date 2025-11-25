@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 
 # Import routers
-from app.routers import auth, health
+from app.routers import auth, health, strava
 
 # Load environment variables
 load_dotenv()
@@ -42,3 +42,4 @@ app = FastAPI(
 # Include routers
 app.include_router(health.router)  # Health endpoints at root level
 app.include_router(auth.router, prefix="/api", tags=["Authentication"])
+app.include_router(strava.router, prefix="/api", tags=["Strava"])
