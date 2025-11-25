@@ -55,6 +55,8 @@ services:
       - "traefik.http.middlewares.cors.headers.accesscontrolmaxage=100"
       - "traefik.http.middlewares.cors.headers.addvaryheader=true"
       - "traefik.http.routers.backend.middlewares=cors"
+    volumes:
+      - ./backend:/app
     networks:
       - cyclo-veda
     restart: unless-stopped
