@@ -4,8 +4,9 @@ Strava integration router
 Handles OAuth flow and Strava API integration
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import RedirectResponse
+from typing import Optional
 
 router = APIRouter(prefix="/strava")
 
@@ -29,5 +30,36 @@ async def connect_strava():
 
     return RedirectResponse(
         url=auth_url,
+        status_code=302
+    )
+
+@router.get("/callback")
+async def strava_callback(
+    request: Request,
+    state: Optional[str] = Query(None),
+    code: Optional[str] = Query(None),
+    scope: Optional[str] = Query(None),
+    error: Optional[str] = Query(None)
+):
+    """
+    Handles OAuth callback from Strava
+
+    Strava redirects here after user authorization.
+    We exchange the code for tokens and redirect back to frontend.
+    """
+    if error:
+        return RedirectResponse(
+            url="http://localhost:5173/settings?error=strava_auth_failed", # TODO: keep urls in a central location
+            status_code=302
+        )
+    
+    if not code:
+        return RedirectResponse(
+            url="http://localhost:5173/settings?error=strava_no_code",
+            status_code=302
+        )
+
+    return RedirectResponse(
+        url="http://localhost:5173/settings",
         status_code=302
     )
