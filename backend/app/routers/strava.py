@@ -11,6 +11,7 @@ from typing import Optional
 
 STRAVA_CLIENT_ID = os.getenv("STRAVA_CLIENT_ID")
 STRAVA_REDIRECT_URI = os.getenv("STRAVA_REDIRECT_URI")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 router = APIRouter(prefix="/strava")
 
@@ -53,17 +54,17 @@ async def strava_callback(
     """
     if error:
         return RedirectResponse(
-            url="http://localhost:5173/settings?error=strava_auth_failed", # TODO: keep urls in a central location
+            url=f"{FRONTEND_URL}/settings?error=strava_auth_failed",
             status_code=302
         )
     
     if not code:
         return RedirectResponse(
-            url="http://localhost:5173/settings?error=strava_no_code",
+            url=f"{FRONTEND_URL}/settings?error=strava_no_code",
             status_code=302
         )
 
     return RedirectResponse(
-        url="http://localhost:5173/settings",
+        url=f"{FRONTEND_URL}/settings",
         status_code=302
     )
