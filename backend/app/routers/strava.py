@@ -4,9 +4,13 @@ Strava integration router
 Handles OAuth flow and Strava API integration
 """
 
+import os
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import RedirectResponse
 from typing import Optional
+
+STRAVA_CLIENT_ID = os.getenv("STRAVA_CLIENT_ID")
+STRAVA_REDIRECT_URI = os.getenv("STRAVA_REDIRECT_URI")
 
 router = APIRouter(prefix="/strava")
 
@@ -20,12 +24,12 @@ async def connect_strava():
     """
 
     auth_url = (
-        "https://www.strava.com/oauth/authorize?"
-        "client_id=113526&"
-        "redirect_uri=http://api.cycloveda.local/api/strava/callback&"
-        "response_type=code&"
-        "scope=activity:read_all&"
-        "approval_prompt=force"
+        f"https://www.strava.com/oauth/authorize?"
+        f"client_id={STRAVA_CLIENT_ID}&"
+        f"redirect_uri={STRAVA_REDIRECT_URI}&"
+        f"response_type=code&"
+        f"scope=activity:read_all&"
+        f"approval_prompt=force"
     )
 
     return RedirectResponse(
