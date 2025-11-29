@@ -23,7 +23,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 
 # Import your app components
-from main import app
+from app.main import app
 from app.services.auth_service import AuthService
 from app.models.user import User, UserCreate
 from app.auth.dependencies import get_current_user

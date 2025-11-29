@@ -1,7 +1,7 @@
 services:
   # Traefik reverse proxy
   traefik:
-    image: traefik:v3.0
+    image: traefik:v2.11
     container_name: cyclo-veda-traefik
     command:
       # Enable Docker provider
