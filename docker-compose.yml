@@ -34,10 +34,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: cyclo-veda-backend
-    environment:
-      - PYTHONPATH=/app
-      - SECRET_KEY=your-secret-key-change-this-in-production
-      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    env_file:
+      - ./backend/.env
     labels:
       - "traefik.enable=true"
       # HTTP router
