@@ -36,6 +36,7 @@ dependencies = [
     "bcrypt>=3.2.0,<4.0.0",  # Use older bcrypt version compatible with passlib
     "python-dotenv>=1.0.1",  # Required for loading .env files in local development
     "email-validator>=2.1.0",  # Required for Pydantic email validation
+    "httpx>=0.28.0",
 ]
 
 # Optional dependency groups
@@ -46,9 +47,6 @@ test = [
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
-    
-    # HTTP testing
-    "httpx>=0.28.0",
     
     # Code quality and formatting
     "black>=24.10.0",
