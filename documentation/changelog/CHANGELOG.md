@@ -9,6 +9,31 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 - Enhanced dashboard functionality
 - API documentation improvements
 
+## [0.6.0] - 2025-11-29
+
+### Added
+- **Strava Integration (Backend)**:
+  - Implemented OAuth 2.0 Authorization Code flow integration with Strava
+  - Added `app/routers/strava.py` to handle authentication (`/api/strava/connect`) and callback (`/api/strava/callback`)
+  - Added `httpx` for asynchronous HTTP requests to Strava API
+  - Registered Strava router in `main.py` with `/api/strava` prefix
+- **Dependencies**:
+  - Added `httpx>=0.28.0` for async API client capabilities
+  - Added `email-validator` for robust email validation in Pydantic models
+
+### Changed
+- **Backend Dependencies**:
+  - Optimized production dependencies: removed `python-multipart` and `uvicorn[standard]`
+  - Updated `passlib` and `bcrypt` configuration to avoid version conflicts
+  - Moved `pre-commit` to dev dependencies
+- **Documentation**:
+  - Added ADR for Strava Integration Strategy (`2025-11-29-strava-integration-strategy.md`)
+
+### Under Development
+- Advanced user management features
+- Enhanced dashboard functionality
+- API documentation improvements
+
 ## [0.5.0] - 2025-11-23
 
 ### Added
@@ -148,7 +173,8 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 - Git repository initialization
 - Basic project configuration
 
-[Unreleased]: https://github.com/rhish9h/cyclo-veda/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/rhish9h/cyclo-veda/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.2.0...v0.3.0
