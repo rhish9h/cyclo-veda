@@ -1,0 +1,1 @@
+Cyclo Veda brings wisdom to your cycling. It reads your Strava rides, understands your patterns, and builds training plans that fit your real life — not the other way around. Clear guidance, no overwhelm, just better rides.
