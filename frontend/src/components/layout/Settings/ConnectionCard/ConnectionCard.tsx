@@ -26,7 +26,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
     isConnected,
     // connectedAt,
     // syncActivities,
-    onConnect,
+    // onConnect,
     onDisconnect,
     // onSyncToggle
 }) => {

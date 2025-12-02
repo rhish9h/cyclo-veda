@@ -65,8 +65,31 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    depends_on:
+      - postgres
 
   # Frontend web application - Run it locally for the fastest hot reloads - make sure to match the node version
+
+  # Postgres database
+  postgres:
+    image: postgres:17.7
+    container_name: cyclo-veda-postgres
+    environment:
+      # TODO: might need to switch to secrets files for prod, research and take a call
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - cyclo-veda
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 networks:
   cyclo-veda:
@@ -76,3 +99,4 @@ networks:
 volumes:
   traefik-data:
     driver: local
+  postgres-data:
