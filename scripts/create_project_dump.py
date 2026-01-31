@@ -3,17 +3,21 @@ import glob
 import shutil
 from pathlib import Path
 import re
+import argparse
+from typing import Set, List
 
 # Define file extensions to include
-INCLUDE_EXTENSIONS = {'.py', '.js', '.html', '.css', '.json', '.md', '.yaml', '.yml', '.txt', '.xml', '.cpp', '.h', '.rs', '.java', '.c', '.h', '.ts', '.tsx', '.go', '.rs', '.php', '.sql', '.sh', '.bash'}
+INCLUDE_EXTENSIONS = {
+    '.py', '.js', '.html', '.css', '.json', '.md', '.yaml', '.yml', '.txt', '.xml',
+    '.cpp', '.h', '.rs', '.java', '.c', '.ts', '.tsx', '.go', '.php', '.sql', '.sh', '.bash'
+}
 
-# Define paths
-PROJECT_ROOT = Path.cwd()
-DUMP_FILE = PROJECT_ROOT / 'dump.txt'
+# Default dump file
+DUMP_FILE = 'dump.txt'
 
-# Read .gitignore and return a set of ignored file paths
-def read_gitignore():
-    gitignore_path = PROJECT_ROOT / '.gitignore'
+
+def read_gitignore(project_root: Path) -> tuple[Set[str], Set[str]]:
+    gitignore_path = project_root / '.gitignore'
     if not gitignore_path.exists():
         return set(), set()
 
@@ -24,23 +28,20 @@ def read_gitignore():
     ignored_directories = set()
 
     for pattern in patterns:
-        # Normalize pattern
         pattern = pattern.strip()
         if not pattern:
             continue
 
-        # Handle absolute and relative paths
+        # Handle absolute path
         if pattern.startswith('/'):
-            # Absolute path
             ignored_files.add(pattern[1:])
+        # Handle **/folder/*
         elif pattern.startswith('**/'):
-            # Pattern like **/folder/*
             ignored_files.add(pattern[3:])
+        # Handle folder pattern (ends with /)
         elif pattern.endswith('/'):
-            # Folder pattern
             ignored_directories.add(pattern.rstrip('/'))
         else:
-            # Simple pattern
             ignored_files.add(pattern)
 
         # Expand glob patterns
@@ -54,23 +55,21 @@ def read_gitignore():
 
     return ignored_files, ignored_directories
 
-# Check if a file is ignored
-def is_ignored(filepath, ignored_files, ignored_directories):
+
+def is_ignored(filepath: str, ignored_files: Set[str], ignored_directories: Set[str]) -> bool:
     filepath = os.path.normpath(filepath)
-    # Check if file is directly ignored
     if filepath in ignored_files:
         return True
-    # Check if any parent directory is ignored
     for dir_path in Path(filepath).parents:
         if str(dir_path) in ignored_directories:
             return True
     return False
 
-# Get all project files to include
-def get_project_files(ignored_files, ignored_directories):
+
+def get_project_files(project_root: Path, ignored_files: Set[str], ignored_directories: Set[str]) -> List[str]:
     files = []
-    for root, dirs, filenames in os.walk(PROJECT_ROOT):
-        # Skip ignored directories
+    for root, dirs, filenames in os.walk(project_root):
+        # Filter out ignored directories
         dirs[:] = [d for d in dirs if not is_ignored(os.path.join(root, d), ignored_files, ignored_directories)]
         for filename in filenames:
             if filename.startswith('.'):
@@ -82,24 +81,26 @@ def get_project_files(ignored_files, ignored_directories):
                 files.append(file_path)
     return sorted(files)
 
-# Main function
-def create_dump():
-    ignored_files, ignored_directories = read_gitignore()
-    
-    # Get all files to include
-    project_files = get_project_files(ignored_files, ignored_directories)
 
-    # Write to dump.txt
-    with open(DUMP_FILE, 'w', encoding='utf-8') as f:
+def create_dump(project_root: Path):
+    ignored_files, ignored_directories = read_gitignore(project_root)
+    project_files = get_project_files(project_root, ignored_files, ignored_directories)
+    dump_file = project_root / DUMP_FILE
+
+    with open(dump_file, 'w', encoding='utf-8') as f:
         # Write project structure
         f.write("=== PROJECT STRUCTURE ===\n")
-        for root, dirs, files in os.walk(PROJECT_ROOT):
-            level = root.replace(str(PROJECT_ROOT), '').count(os.sep)
+        for root, dirs, files in os.walk(project_root):
+            # Only show directories that are not ignored
+            if is_ignored(root, ignored_files, ignored_directories):
+                continue
+
+            level = root.replace(str(project_root), '').count(os.sep)
             indent = ' ' * 4 * level
             f.write(f"{indent}{os.path.basename(root)}/\n")
             subindent = ' ' * 4 * (level + 1)
             for file in files:
-                if file.startswith('.'):
+                if file.startswith('.') or is_ignored(os.path.join(root, file), ignored_files, ignored_directories):
                     continue
                 f.write(f"{subindent}{file}\n")
 
@@ -114,7 +115,24 @@ def create_dump():
             except Exception as e:
                 f.write(f"// Could not read file: {e}\n")
 
-    print(f"✅ Dump created: {DUMP_FILE}")
+    print(f"✅ Dump created: {dump_file}")
+
 
 if __name__ == "__main__":
-    create_dump()
+    parser = argparse.ArgumentParser(description="Create a dump of a project directory, respecting .gitignore.")
+    parser.add_argument(
+        'path', nargs='?', default=Path.cwd(), help="Path to the project directory (default: current directory)"
+    )
+    args = parser.parse_args()
+
+    project_root = Path(args.path).resolve()
+
+    if not project_root.exists():
+        print(f"❌ Error: Path '{project_root}' does not exist.")
+        exit(1)
+
+    if not project_root.is_dir():
+        print(f"❌ Error: '{project_root}' is not a directory.")
+        exit(1)
+
+    create_dump(project_root)
