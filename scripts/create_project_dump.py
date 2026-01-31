@@ -1,0 +1,120 @@
+import os
+import glob
+import shutil
+from pathlib import Path
+import re
+
+# Define file extensions to include
+INCLUDE_EXTENSIONS = {'.py', '.js', '.html', '.css', '.json', '.md', '.yaml', '.yml', '.txt', '.xml', '.cpp', '.h', '.rs', '.java', '.c', '.h', '.ts', '.tsx', '.go', '.rs', '.php', '.sql', '.sh', '.bash'}
+
+# Define paths
+PROJECT_ROOT = Path.cwd()
+DUMP_FILE = PROJECT_ROOT / 'dump.txt'
+
+# Read .gitignore and return a set of ignored file paths
+def read_gitignore():
+    gitignore_path = PROJECT_ROOT / '.gitignore'
+    if not gitignore_path.exists():
+        return set(), set()
+
+    with open(gitignore_path, 'r', encoding='utf-8') as f:
+        patterns = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+
+    ignored_files = set()
+    ignored_directories = set()
+
+    for pattern in patterns:
+        # Normalize pattern
+        pattern = pattern.strip()
+        if not pattern:
+            continue
+
+        # Handle absolute and relative paths
+        if pattern.startswith('/'):
+            # Absolute path
+            ignored_files.add(pattern[1:])
+        elif pattern.startswith('**/'):
+            # Pattern like **/folder/*
+            ignored_files.add(pattern[3:])
+        elif pattern.endswith('/'):
+            # Folder pattern
+            ignored_directories.add(pattern.rstrip('/'))
+        else:
+            # Simple pattern
+            ignored_files.add(pattern)
+
+        # Expand glob patterns
+        try:
+            matches = glob.glob(os.path.join('**', pattern), recursive=True)
+            for match in matches:
+                if os.path.isfile(match):
+                    ignored_files.add(match)
+        except Exception:
+            pass
+
+    return ignored_files, ignored_directories
+
+# Check if a file is ignored
+def is_ignored(filepath, ignored_files, ignored_directories):
+    filepath = os.path.normpath(filepath)
+    # Check if file is directly ignored
+    if filepath in ignored_files:
+        return True
+    # Check if any parent directory is ignored
+    for dir_path in Path(filepath).parents:
+        if str(dir_path) in ignored_directories:
+            return True
+    return False
+
+# Get all project files to include
+def get_project_files(ignored_files, ignored_directories):
+    files = []
+    for root, dirs, filenames in os.walk(PROJECT_ROOT):
+        # Skip ignored directories
+        dirs[:] = [d for d in dirs if not is_ignored(os.path.join(root, d), ignored_files, ignored_directories)]
+        for filename in filenames:
+            if filename.startswith('.'):
+                continue
+            file_path = os.path.join(root, filename)
+            if is_ignored(file_path, ignored_files, ignored_directories):
+                continue
+            if any(filename.endswith(ext) for ext in INCLUDE_EXTENSIONS):
+                files.append(file_path)
+    return sorted(files)
+
+# Main function
+def create_dump():
+    ignored_files, ignored_directories = read_gitignore()
+    
+    # Get all files to include
+    project_files = get_project_files(ignored_files, ignored_directories)
+
+    # Write to dump.txt
+    with open(DUMP_FILE, 'w', encoding='utf-8') as f:
+        # Write project structure
+        f.write("=== PROJECT STRUCTURE ===\n")
+        for root, dirs, files in os.walk(PROJECT_ROOT):
+            level = root.replace(str(PROJECT_ROOT), '').count(os.sep)
+            indent = ' ' * 4 * level
+            f.write(f"{indent}{os.path.basename(root)}/\n")
+            subindent = ' ' * 4 * (level + 1)
+            for file in files:
+                if file.startswith('.'):
+                    continue
+                f.write(f"{subindent}{file}\n")
+
+        f.write("\n=== CODE FILES ===\n")
+        for file_path in project_files:
+            f.write(f"\n--- {file_path} ---\n")
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f2:
+                    content = f2.read()
+                    f.write(content)
+                    f.write("\n\n")
+            except Exception as e:
+                f.write(f"// Could not read file: {e}\n")
+
+    print(f"✅ Dump created: {DUMP_FILE}")
+
+if __name__ == "__main__":
+    create_dump()
