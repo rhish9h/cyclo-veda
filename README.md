@@ -2,55 +2,57 @@
 
 An app to gain more insights from your cycling journey!
 
-## 🚀 Quick Start with Docker
+## 🚀 Setup
 
-The easiest way to run Cyclo Veda is using Docker:
+### One-time Setup
 
 ```bash
-# 1. Set up local hostnames (one-time setup) - see instructions below
+# 1. Add to /etc/hosts (sudo nano /etc/hosts)
+127.0.0.1 cycloveda.local
+127.0.0.1 api.cycloveda.local
 
 # 2. Copy environment file
 cp .env.example .env
+```
 
-# 3. Start all services
+## 🛠️ Development
+
+```bash
+# Start backend & database
+docker compose -f docker-compose-dev.yml up -d postgres backend traefik
+
+# Start frontend locally
+cd frontend && npm install && npm run dev
+```
+
+**Access:** Frontend at http://localhost:5173 | Backend at http://api.cycloveda.local | Dashboard at http://localhost:8080
+
+### Development Commands
+
+```bash
+# View backend logs
+docker compose -f docker-compose-dev.yml logs -f backend
+
+# Restart backend
+docker compose -f docker-compose-dev.yml restart backend
+
+# Stop services
+docker compose -f docker-compose-dev.yml down
+```
+
+## 🏭 Production
+
+```bash
 docker compose up --build
 ```
 
-### Setting Up Local Hostnames
-
-You need to add entries to your hosts file to use the custom hostnames:
-
-**For Mac/Linux:**
-```bash
-sudo nano /etc/hosts
-```
-
-Add these lines at the end:
-```
-127.0.0.1 cycloveda.local
-127.0.0.1 api.cycloveda.local
-```
-
-**For Windows:**
-1. Open Notepad as Administrator
-2. Open the file: `C:\Windows\System32\drivers\etc\hosts`
-3. Add these lines at the end:
-```
-127.0.0.1 cycloveda.local
-127.0.0.1 api.cycloveda.local
-```
-4. Save the file
-
-**Access the application:**
-- 🌐 Frontend: http://cycloveda.local
-- 🔌 Backend API: http://api.cycloveda.local
-- 📊 Traefik Dashboard: http://localhost:8080
+**Access:** Frontend at http://cycloveda.local | Backend at http://api.cycloveda.local
 
 ## 🏗️ Architecture
 
 - **Frontend**: React + TypeScript with modern tooling
 - **Backend**: FastAPI with JWT authentication
-- **Reverse Proxy**: Traefik v3.0 for routing and load balancing
+- **Reverse Proxy**: Traefik v2.11 for routing and load balancing
 - **Testing**: Comprehensive test suite with pytest
 - **Documentation**: ADR framework for architectural decisions
 
@@ -61,24 +63,6 @@ Add these lines at the end:
 - [Authentication Guide](documentation/docs/authentication.md) - Auth implementation details
 - [Architecture Overview](documentation/docs/architecture.md) - System design decisions
 - [Changelog](documentation/changelog/CHANGELOG.md) - Project change history
-
-## 🛠️ Development
-
-### Local Development (without Docker)
-
-**Backend:**
-```bash
-cd backend
-pip install -e ".[dev]"
-uvicorn main:app --reload
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
 
 ### Testing
 ```bash
@@ -141,6 +125,7 @@ For testing the authentication system:
 │   ├── changelog/    # Change history
 │   └── docs/         # Technical documentation
 └── docker-compose.yml # Multi-service orchestration
+├── docker-compose-dev.yml # Development configuration
 ```
 
 ## 🤝 Contributing
