@@ -1,0 +1,1 @@
+Use this directory to store all specifications and design documents for the project, pre development. This will be used for agentic development with AI.
