@@ -15,6 +15,13 @@ An app to gain more insights from your cycling journey!
 cp .env.example .env
 ```
 
+## 🛠️ Development Tools
+
+- **Docker Desktop** - Container management and orchestration
+- **Postman** - API testing and documentation  
+- **pgAdmin 4** - PostgreSQL database management
+- **Modern Web Browser** - Application testing and development
+
 ## 🛠️ Development
 
 ```bash
