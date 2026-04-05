@@ -4,12 +4,16 @@ This module provides dependency functions that can be used to protect routes
 and access the current authenticated user's information.
 """
 
+import asyncio
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
 from typing import Optional
 
+from ..database import get_db
 from ..services.auth_service import AuthService
-from ..models.user import User
+from ..schemas.user import User
 
 # Constants
 AUTH_SCHEME = "Bearer"
@@ -41,7 +45,8 @@ def _create_credentials_exception(detail: str = INVALID_CREDENTIALS_MESSAGE) -> 
 
 
 async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    db: Session = Depends(get_db),
 ) -> User:
     """Dependency to get the current authenticated user from JWT token.
     
@@ -72,8 +77,8 @@ async def get_current_user(
     if not token_data:
         raise _create_credentials_exception("Invalid or expired token")
     
-    # Get user from database
-    user = AuthService.get_user(email=token_data.email)
+    # Get user from database (sync call wrapped to avoid blocking the event loop)
+    user = await asyncio.to_thread(AuthService.get_user, db, token_data.email)
     if not user:
         raise _create_credentials_exception("User not found")
         

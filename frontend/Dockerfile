@@ -11,7 +11,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (including devDependencies for build)
-RUN npm ci
+# --legacy-peer-deps: eslint-plugin-react-hooks@5.x doesn't declare ESLint 10 peer support yet
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY . .

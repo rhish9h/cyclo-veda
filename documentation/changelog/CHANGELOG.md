@@ -9,6 +9,68 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 - Enhanced dashboard functionality
 - API documentation improvements
 
+## [0.9.0] - 2026-04-05
+
+### Changed (Docker Compose restructure + cleanup)
+
+**Infrastructure**
+- Split `docker-compose-dev.yml` (monolithic standalone) into three files with a single source of truth:
+  - `docker-compose.yml` — shared base: traefik, migrate init container, backend, postgres
+  - `docker-compose.dev.yml` — dev overrides only: source mount for hot reload, dev container names, `localhost:5173` in CORS allowlist, writable docker.sock
+  - `docker-compose.prod.yml` — prod overrides only: frontend service build + nginx, read-only docker.sock, prod container names
+- Deleted `docker-compose-dev.yml`
+- Dev command: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d`
+- Prod command: `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`
+- Added `migrate` init container to base compose — runs `alembic upgrade head` before backend starts, uses `service_completed_successfully` condition; idempotent (no-op if already at head)
+- Fixed `backend depends_on` to gate on `migrate` completing rather than just postgres being healthy
+
+**Bug fix**
+- Fixed pre-existing frontend Docker build failure: `eslint-plugin-react-hooks@5.x` does not declare ESLint 10 as a supported peer; added `--legacy-peer-deps` to `npm ci` in `frontend/Dockerfile`
+
+**Security**
+- Removed hardcoded `DATABASE_URL` fallback from `app/database.py`; engine creation is now lazy — raises `RuntimeError` with a helpful message if `DATABASE_URL` is missing at runtime, without breaking imports during tests
+
+**Schema cleanup**
+- Removed `UserInDB` Pydantic schema — made obsolete when `auth_service` was refactored to build `User` directly from the `UserORM` row
+- Removed `UserResponse` Pydantic schema — no production usage; timestamps available directly from `UserORM` via `from_attributes=True`
+- Removed associated dead tests: `TestUserInDB`, `TestUserResponse`, `TestModelInteroperability`
+- Test count: 76 → 68 (all deleted tests were for deleted classes)
+
+**Documentation**
+- Updated root `README.md`: new compose commands, correct project structure tree, updated tech stack (Python 3.14, PyJWT, SQLAlchemy, Alembic), removed stale test credentials section
+- Updated `backend/README.md`: Python 3.14 badge, new directory structure (models/schemas/repositories/migrations), updated env and Docker sections
+
+## [0.8.0] - 2026-04-05
+
+### Added (Phase 1: Database Foundation)
+
+**Backend**
+- Added `sqlalchemy>=2.0.0`, `alembic>=1.13.0`, `psycopg2-binary>=2.9.0`, `cryptography>=42.0.0` to `pyproject.toml`
+- Created `app/database.py`: sync SQLAlchemy engine + `SessionLocal` + `get_db` FastAPI dependency
+- Created `app/models/base.py`: `DeclarativeBase` with shared `created_at`/`updated_at` (timezone-aware) columns
+- Created `app/models/user.py`: `UserORM` SQLAlchemy model mapping to the `users` table
+- Created `app/repositories/user_repository.py`: `UserRepository` with `get_by_email`, `get_by_id`, `get_by_username`, `create`, `set_active`
+- Initialised Alembic at `backend/migrations/`; configured `env.py` to load `DATABASE_URL` from env and use `Base.metadata` for autogenerate
+- Generated first migration: `c648683e070d_create_users_table.py` (creates `users` table with indexes)
+
+**Reorganisation**
+- Moved all Pydantic models from `app/models/` → `app/schemas/` to separate validation schemas from ORM models
+  - `app/schemas/user.py` — `UserBase`, `UserCreate`, `UserLogin`, `UserInDB`, `User`, `UserResponse`
+  - `app/schemas/token.py` — `Token`, `TokenData`
+  - `app/schemas/__init__.py` — re-exports all schemas
+- `app/models/` now contains only SQLAlchemy ORM classes
+
+**Auth flow updated**
+- `AuthService.get_user(db, email)` and `authenticate_user(db, email, password)` now accept a `Session` parameter and query the database via `UserRepository` (replaces `fake_users_db`)
+- `get_current_user` dependency and `login_for_access_token` router function both receive and pass a `db` session
+- Added `id: Optional[int]` to the `User` Pydantic schema; populated from the DB row on every authenticated request
+- Updated `backend/.env.example` with `DATABASE_URL` and `STRAVA_ENCRYPTION_KEY` placeholders
+
+**Tests**
+- All 76 tests updated and passing — imports migrated from `app.models.*` to `app.schemas.*`
+- `conftest.py`: new `override_db` autouse fixture mocks the DB session and patches `UserRepository.get_by_email`; no live DB required for tests
+- Fixed `datetime.utcnow()` → `datetime.now(timezone.utc)` in test files
+
 ## [0.7.0] - 2026-04-05
 
 ### Changed (Phase 0: Dependency & Runtime Upgrades)

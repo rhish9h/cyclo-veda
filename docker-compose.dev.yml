@@ -1,0 +1,28 @@
+# Development overrides — apply on top of docker-compose.yml:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# What this file changes vs the base:
+#   - backend: mounts source code for hot reload, dev container name
+#   - migrate: dev container name
+#   - traefik: writable docker.sock (some Docker Desktop versions need this), dashboard enabled
+#   - CORS: adds localhost:5173 for local frontend dev server
+#   - frontend: not included (run locally with `npm run dev` for fastest HMR)
+
+services:
+  migrate:
+    container_name: cyclo-veda-migrate-dev
+
+  backend:
+    container_name: cyclo-veda-backend-dev
+    volumes:
+      - ./backend:/app  # Hot reload — uvicorn picks up code changes instantly
+    labels:
+      # Override CORS to also allow the local Vite dev server
+      - "traefik.http.middlewares.cors.headers.accesscontrolalloworiginlist=http://localhost:5173,http://cycloveda.local,https://cycloveda.local"
+
+  traefik:
+    container_name: cyclo-veda-traefik-dev
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Writable — needed on some Docker Desktop versions
+      - ./traefik-data:/data

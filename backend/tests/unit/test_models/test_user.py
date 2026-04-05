@@ -8,18 +8,15 @@ Test Categories:
 - UserBase model validation
 - UserCreate model validation and password strength
 - UserLogin model validation
-- UserInDB model with sensitive data handling
 - User model for safe API responses
-- UserResponse model for extended responses
 """
 
 import pytest
-from datetime import datetime
 from pydantic import ValidationError
 from typing import List
 
-from app.models.user import (
-    UserBase, UserCreate, UserLogin, UserInDB, User, UserResponse,
+from app.schemas.user import (
+    UserBase, UserCreate, UserLogin, User,
     USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH, PASSWORD_MIN_LENGTH
 )
 
@@ -177,75 +174,6 @@ class TestUserLogin:
         assert login_case.email == "ADMIN@CYCLOVEDA.COM"
 
 
-class TestUserInDB:
-    """Test UserInDB model with sensitive data handling"""
-    
-    def test_valid_user_in_db(self):
-        """Test creating UserInDB with valid data"""
-        user_data = {
-            "email": "test@example.com",
-            "username": "testuser",
-            "hashed_password": "$2b$12$hashedpassword",
-            "is_active": True,
-            "is_superuser": False,
-            "roles": ["user"]
-        }
-        user = UserInDB(**user_data)
-        
-        assert user.email == "test@example.com"
-        assert user.username == "testuser"
-        assert user.hashed_password == "$2b$12$hashedpassword"
-        assert user.is_active is True
-        assert user.is_superuser is False
-        assert user.roles == ["user"]
-    
-    def test_default_values(self):
-        """Test default values for optional fields"""
-        user_data = {
-            "email": "test@example.com",
-            "username": "testuser",
-            "hashed_password": "$2b$12$hashedpassword"
-        }
-        user = UserInDB(**user_data)
-        
-        assert user.is_active is True  # Default
-        assert user.is_superuser is False  # Default
-        assert user.roles == []  # Default empty list
-        assert isinstance(user.created_at, datetime)
-        assert isinstance(user.updated_at, datetime)
-    
-    def test_hashed_password_exclusion(self):
-        """Test that hashed_password is excluded from serialization"""
-        user_data = {
-            "email": "test@example.com",
-            "username": "testuser",
-            "hashed_password": "$2b$12$hashedpassword"
-        }
-        user = UserInDB(**user_data)
-        
-        # Convert to dict (simulates JSON serialization)
-        user_dict = user.model_dump()
-        
-        # hashed_password should be excluded
-        assert "hashed_password" not in user_dict
-        assert "email" in user_dict
-        assert "username" in user_dict
-    
-    def test_timestamps_auto_generation(self):
-        """Test that timestamps are automatically generated"""
-        user_data = {
-            "email": "test@example.com",
-            "username": "testuser",
-            "hashed_password": "$2b$12$hashedpassword"
-        }
-        user = UserInDB(**user_data)
-        
-        assert user.created_at is not None
-        assert user.updated_at is not None
-        assert isinstance(user.created_at, datetime)
-        assert isinstance(user.updated_at, datetime)
-
-
 class TestUser:
     """Test User model for safe API responses"""
     
@@ -286,99 +214,14 @@ class TestUser:
         user = User(**user_data)
         user_dict = user.model_dump()
         
-        # Should contain safe fields
-        expected_fields = {"email", "username", "is_active", "roles"}
+        # Should contain safe fields (id is Optional[int], included in dump as None)
+        expected_fields = {"id", "email", "username", "is_active", "roles"}
         assert set(user_dict.keys()) == expected_fields
         
         # Should not contain sensitive fields
         sensitive_fields = {"hashed_password", "created_at", "updated_at", "is_superuser"}
         for field in sensitive_fields:
             assert field not in user_dict
-
-
-class TestUserResponse:
-    """Test UserResponse model for extended responses"""
-    
-    def test_valid_user_response(self):
-        """Test creating UserResponse with valid data"""
-        user_data = {
-            "id": 1,
-            "email": "test@example.com",
-            "username": "testuser",
-            "is_active": True,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-            "roles": ["user", "admin"]
-        }
-        user = UserResponse(**user_data)
-        
-        assert user.id == 1
-        assert user.email == "test@example.com"
-        assert user.username == "testuser"
-        assert user.is_active is True
-        assert isinstance(user.created_at, datetime)
-        assert isinstance(user.updated_at, datetime)
-        assert user.roles == ["user", "admin"]
-    
-    def test_user_response_required_fields(self):
-        """Test that required fields are enforced in UserResponse"""
-        # Missing id
-        with pytest.raises(ValidationError):
-            UserResponse(
-                email="test@example.com",
-                username="testuser",
-                is_active=True,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
-                roles=[]
-            )
-
-
-class TestModelInteroperability:
-    """Test interactions between different user models"""
-    
-    def test_user_from_user_in_db(self):
-        """Test creating User from UserInDB (safe conversion)"""
-        user_in_db_data = {
-            "email": "test@example.com",
-            "username": "testuser",
-            "hashed_password": "$2b$12$hashedpassword",
-            "is_active": True,
-            "roles": ["user"]
-        }
-        user_in_db = UserInDB(**user_in_db_data)
-        
-        # Convert to safe User model
-        user_data = user_in_db.model_dump(exclude={"hashed_password", "created_at", "updated_at", "is_superuser"})
-        user = User(**user_data)
-        
-        assert user.email == user_in_db.email
-        assert user.username == user_in_db.username
-        assert user.is_active == user_in_db.is_active
-        assert user.roles == user_in_db.roles
-    
-    def test_user_create_to_user_in_db_simulation(self):
-        """Test simulating user creation flow"""
-        # Start with UserCreate (registration)
-        user_create_data = {
-            "email": "newuser@example.com",
-            "username": "newuser",
-            "password": "securePassword123!"
-        }
-        user_create = UserCreate(**user_create_data)
-        
-        # Simulate creating UserInDB (what would happen in service)
-        user_in_db_data = {
-            "email": user_create.email,
-            "username": user_create.username,
-            "hashed_password": "$2b$12$hashedversionof" + user_create.password,  # Simulated hash
-            "is_active": True
-        }
-        user_in_db = UserInDB(**user_in_db_data)
-        
-        assert user_in_db.email == user_create.email
-        assert user_in_db.username == user_create.username
-        assert user_in_db.hashed_password != user_create.password  # Should be hashed
 
 
 class TestEdgeCases:

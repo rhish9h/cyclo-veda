@@ -6,13 +6,16 @@ This module defines the authentication endpoints for the API including:
 - Protected route access
 """
 
+import asyncio
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
 from ..auth.dependencies import get_current_active_user
-from ..models.user import User, UserLogin
-from ..models.token import Token
+from ..database import get_db
+from ..schemas.user import User, UserLogin
+from ..schemas.token import Token
 from ..services.auth_service import AuthService, ACCESS_TOKEN_EXPIRE_MINUTES
 
 # Router configuration
@@ -35,7 +38,10 @@ router = APIRouter(
         401: {"description": "Invalid credentials"},
     },
 )
-async def login_for_access_token(user_login: UserLogin) -> Token:
+async def login_for_access_token(
+    user_login: UserLogin,
+    db: Session = Depends(get_db),
+) -> Token:
     """Authenticate user and return JWT access token.
     
     This endpoint validates user credentials and returns a JWT token
@@ -50,8 +56,8 @@ async def login_for_access_token(user_login: UserLogin) -> Token:
     Raises:
         HTTPException: 401 if credentials are invalid
     """
-    # Authenticate user with provided credentials
-    user = AuthService.authenticate_user(user_login.email, user_login.password)
+    # Authenticate user with provided credentials (sync DB call wrapped for async safety)
+    user = await asyncio.to_thread(AuthService.authenticate_user, db, user_login.email, user_login.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
