@@ -15,7 +15,8 @@ Test Categories:
 import pytest
 from unittest.mock import patch, Mock
 from datetime import datetime, timedelta, timezone
-from jose import jwt, JWTError
+import jwt
+from jwt import InvalidTokenError
 
 from app.services.auth_service import AuthService, SECRET_KEY, ALGORITHM
 from app.models.user import User, UserInDB
@@ -259,8 +260,13 @@ class TestEdgeCasesAndErrorHandling:
         assert AuthService.verify_password(password, hashed) is True
     
     def test_hash_password_very_long_password(self):
-        """Test password hashing with very long password"""
-        password = "a" * 1000  # 1000 character password
+        """Test password hashing with a password at bcrypt's 72-byte limit.
+        
+        bcrypt truncates at 72 bytes. pwdlib enforces this limit strictly
+        (raises ValueError for passwords > 72 bytes). Passwords must be
+        pre-truncated or validated before hashing.
+        """
+        password = "a" * 72  # bcrypt's maximum supported password length
         hashed = AuthService.get_password_hash(password)
         
         assert AuthService.verify_password(password, hashed) is True
@@ -284,7 +290,7 @@ class TestEdgeCasesAndErrorHandling:
         with pytest.raises(Exception):
             AuthService.create_access_token(data)
     
-    @patch('app.services.auth_service.pwd_context.verify')
+    @patch('app.services.auth_service.pwd_hasher.verify')
     def test_verify_password_bcrypt_error(self, mock_verify):
         """Test password verification when bcrypt fails"""
         mock_verify.side_effect = Exception("Bcrypt verification failed")

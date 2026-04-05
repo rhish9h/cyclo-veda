@@ -1,12 +1,12 @@
 /**
  * Header Component
- * 
+ *
  * Shared header component for all authenticated pages.
  * Contains app title, navigation buttons, and logout functionality.
  */
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../../../../hooks/useAuth';
 import { ROUTES } from '../../../../constants';
 import styles from '../Layout.module.css';
@@ -20,10 +20,10 @@ interface HeaderProps {
 /**
  * Header component with navigation and user actions
  */
-const Header: React.FC<HeaderProps> = ({ 
+const Header: React.FC<HeaderProps> = ({
   title = 'Cyclo Veda',
   showSettings = true,
-  showLogout = true 
+  showLogout = true,
 }) => {
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -47,12 +47,18 @@ const Header: React.FC<HeaderProps> = ({
       <h1 className={styles.layoutHeaderTitle}>{title}</h1>
       <div className={styles.layoutHeaderActions}>
         {showSettings && (
-          <button onClick={handleSettings} className={`${styles.layoutHeaderButton} ${styles.settingsButton}`}>
+          <button
+            onClick={handleSettings}
+            className={`${styles.layoutHeaderButton} ${styles.settingsButton}`}
+          >
             Settings
           </button>
         )}
         {showLogout && (
-          <button onClick={handleLogout} className={`${styles.layoutHeaderButton} ${styles.logoutButton}`}>
+          <button
+            onClick={handleLogout}
+            className={`${styles.layoutHeaderButton} ${styles.logoutButton}`}
+          >
             Logout
           </button>
         )}

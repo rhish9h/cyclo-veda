@@ -9,6 +9,33 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 - Enhanced dashboard functionality
 - API documentation improvements
 
+## [0.7.0] - 2026-04-05
+
+### Changed (Phase 0: Dependency & Runtime Upgrades)
+
+**Backend**
+- Replaced `passlib` + pinned `bcrypt<4.0.0` with `pwdlib[bcrypt]>=0.2.0` (actively maintained successor; resolves Python 3.14 compatibility)
+- Replaced `python-jose[cryptography]` (abandoned, open CVEs) with `PyJWT>=2.8.0`; JWT token structure unchanged
+- Upgraded Python Docker image: `python:3.13-slim` → `python:3.14-slim`
+- Bumped `requires-python` to `>=3.14`
+- Fixed deprecated `datetime.utcnow()` in `UserInDB` → `datetime.now(timezone.utc)`
+- Upgraded PostgreSQL: `17.7` → `18.3`; updated volume mount path to `/var/lib/postgresql` per PG18 requirements
+
+**Frontend**
+- Replaced `react-router-dom@^7.7.0` + `@types/react-router-dom@^5.3.3` with `react-router@^7.14.0` (v7 DOM shim is legacy)
+- Upgraded Vite `7` → `8.0.3`, `@vitejs/plugin-react` `4` → `6.0.1`
+- Upgraded TypeScript `~5.8.3` → `^6.0.2`, ESLint `9` → `10.2.0`
+- Bumped `react`/`react-dom` → `19.2.4`, `prettier` → `3.8.1`, `typescript-eslint` → `8.58.0`
+- Added `frontend/.nvmrc` (Node 24) and `engines` field to `package.json`
+
+### Fixed
+- Removed non-existent `@typescript-eslint/prefer-const` rule from `eslint.config.js`
+- Fixed `from main import app` → `from app.main import app` in integration test
+- Updated long-password test to reflect bcrypt's 72-byte limit (now strictly enforced by `pwdlib`)
+
+### Notes
+- Old `postgres-data` volumes (PG17 format) must be wiped before starting PG18; dev volumes have no persistent user data
+
 ## [0.6.0] - 2025-11-29
 
 ### Added

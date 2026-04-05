@@ -11,8 +11,10 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
 
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+import jwt
+from jwt import InvalidTokenError
+from pwdlib import PasswordHash
+from pwdlib.hashers.bcrypt import BcryptHasher
 
 from ..models.user import User, UserInDB
 from ..models.token import TokenData
@@ -24,7 +26,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 DEFAULT_TOKEN_EXPIRE_MINUTES = 15
 
 # Password hashing configuration
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_hasher = PasswordHash([BcryptHasher()])
 
 # Mock user database - TODO: Replace with real database in production
 fake_users_db: Dict[str, Dict[str, any]] = {}
@@ -56,7 +58,7 @@ class AuthService:
             bool: True if password matches, False otherwise or if verification fails
         """
         try:
-            return pwd_context.verify(plain_password, hashed_password)
+            return pwd_hasher.verify(plain_password, hashed_password)
         except Exception:
             # Handle bcrypt verification errors gracefully
             # Return False for any verification failures
@@ -72,7 +74,7 @@ class AuthService:
         Returns:
             str: The hashed password
         """
-        return pwd_context.hash(password)
+        return pwd_hasher.hash(password)
     
     # User operations
     @staticmethod
@@ -137,7 +139,7 @@ class AuthService:
             
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-        return encoded_jwt
+        return encoded_jwt  # PyJWT returns str directly
 
     @staticmethod
     def verify_token(token: str) -> Optional[TokenData]:
@@ -157,7 +159,7 @@ class AuthService:
                 return None
                 
             return TokenData(email=email)
-        except JWTError:
+        except InvalidTokenError:
             return None
 
 

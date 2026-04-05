@@ -1,12 +1,12 @@
 /**
  * Sidebar Component
- * 
+ *
  * Navigation sidebar for authenticated pages.
  * Contains main navigation links and highlights the active route.
  */
 
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import { ROUTES } from '../../../../constants';
 import styles from '../Layout.module.css';
 
@@ -18,10 +18,7 @@ interface SidebarProps {
 /**
  * Navigation sidebar with menu items
  */
-const Sidebar: React.FC<SidebarProps> = ({ 
-  isOpen = true, 
-  onClose 
-}) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -34,15 +31,15 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Dashboard',
       icon: '📊',
       path: ROUTES.DASHBOARD,
-      description: 'Overview and analytics'
+      description: 'Overview and analytics',
     },
     {
       id: 'settings',
       label: 'Settings',
       icon: '⚙️',
       path: ROUTES.SETTINGS,
-      description: 'Account and app preferences'
-    }
+      description: 'Account and app preferences',
+    },
   ];
 
   /**
@@ -67,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     <aside className={`${styles.layoutSidebar} ${isOpen ? '' : styles.closed}`}>
       <nav className={styles.sidebarNav}>
         <ul className={styles.navList}>
-          {navItems.map((item) => (
+          {navItems.map(item => (
             <li key={item.id} className={styles.navItem}>
               <button
                 className={`${styles.navButton} ${isActive(item.path) ? styles.active : ''}`}
@@ -77,7 +74,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <span className={styles.navIcon}>{item.icon}</span>
                 <span className={styles.navText}>
                   <span className={styles.navLabel}>{item.label}</span>
-                  <span className={styles.navDescription}>{item.description}</span>
+                  <span className={styles.navDescription}>
+                    {item.description}
+                  </span>
                 </span>
               </button>
             </li>

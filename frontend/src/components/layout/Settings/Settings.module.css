@@ -221,32 +221,32 @@
   .settingsLayout {
     grid-template-columns: 1fr;
   }
-  
+
   .settingsSidebar {
     border-right: none;
     border-bottom: 1px solid #e9ecef;
   }
-  
+
   .settingsNav {
     padding: 0;
   }
-  
+
   .settingsNavButton {
     padding: 12px 20px;
   }
-  
+
   .settingsNavText {
     display: none;
   }
-  
+
   .settingsNavIcon {
     margin-top: 0;
   }
-  
+
   .settingsContent {
     padding: 20px;
   }
-  
+
   .settingsSectionContent h3 {
     font-size: 20px;
     margin-bottom: 20px;
@@ -259,20 +259,20 @@
     box-shadow: none;
     margin: -20px;
   }
-  
+
   .settingsContent {
     padding: 16px;
   }
-  
+
   .settingsForm {
     gap: 16px;
   }
-  
+
   .formGroup input,
   .formGroup select {
     padding: 10px 12px;
   }
-  
+
   .saveButton {
     width: 100%;
     align-self: stretch;

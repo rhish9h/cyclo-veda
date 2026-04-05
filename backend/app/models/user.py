@@ -13,7 +13,7 @@ Security Note:
 - User model excludes all sensitive information for safe API responses
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Literal
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -105,8 +105,8 @@ class UserInDB(UserBase):
     hashed_password: str = Field(..., exclude=True)  # Never include in responses
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     roles: List[str] = Field(default_factory=list)
 
     class Config:

@@ -20,7 +20,7 @@ from fastapi import FastAPI
 from unittest.mock import Mock, patch
 import os
 from datetime import datetime, timedelta
-from jose import jwt
+import jwt
 
 # Import your app components
 from app.main import app
@@ -108,7 +108,8 @@ def valid_token(mock_user):
     from app.services.auth_service import SECRET_KEY, ALGORITHM
     
     # Create token data
-    expire = datetime.utcnow() + timedelta(minutes=30)
+    from datetime import timezone
+    expire = datetime.now(timezone.utc) + timedelta(minutes=30)
     token_data = {
         "sub": mock_user.email,
         "exp": expire
@@ -136,7 +137,8 @@ def expired_token(mock_user):
     from app.services.auth_service import SECRET_KEY, ALGORITHM
     
     # Create expired token data
-    expire = datetime.utcnow() - timedelta(minutes=30)  # Already expired
+    from datetime import timezone
+    expire = datetime.now(timezone.utc) - timedelta(minutes=30)  # Already expired
     token_data = {
         "sub": mock_user.email,
         "exp": expire

@@ -40,7 +40,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setMessage("Ready to Ride?");
+        setMessage('Ready to Ride?');
       } catch (err) {
         // Handle and display errors
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -55,9 +55,8 @@ const Dashboard: React.FC = () => {
     fetchData();
   }, []);
 
-
   return (
-    <Layout title="Cyclo Veda Dashboard">
+    <Layout title='Cyclo Veda Dashboard'>
       {/* Main dashboard content area */}
       <div className={styles.dashboardContent}>
         <div className={styles.welcomeCard}>
@@ -67,7 +66,9 @@ const Dashboard: React.FC = () => {
           {loading ? (
             <p>Loading...</p>
           ) : error ? (
-            <p className={`${styles.welcomeCard} ${styles.error}`}>Error: {error}</p>
+            <p className={`${styles.welcomeCard} ${styles.error}`}>
+              Error: {error}
+            </p>
           ) : (
             <p>{message}</p>
           )}
