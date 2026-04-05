@@ -12,13 +12,20 @@ This specification outlines the implementation of persistent storage for Strava 
 - **No Persistence**: All data lost on server restart
 - **No Token Refresh**: Cannot handle Strava token expiration
 - **Mock Auth**: Authentication not production-ready
+- **No User ID**: `User` and `UserInDB` Pydantic models have no `id` field — `id: int` only exists on the unused `UserResponse` model. Phase 2 depends on `current_user.id`, so Phase 1 must add this field.
+- **JWT sub is email, not ID**: `create_access_token` encodes `{"sub": user.email}` and `verify_token` decodes `email = payload.get("sub")`. Token-linking in the OAuth callback must remain email-based until the DB migration is complete and user rows have stable integer IDs.
+- **No `.env.example` files exist**: The spec references updating `backend/.env.example` but neither `backend/.env.example` nor root `.env.example` currently exist in the repository — they must be created.
+- **`datetime.utcnow()` in `UserInDB`**: `created_at` and `updated_at` use the deprecated `datetime.utcnow()` (timezone-naive). Phase 1 must update these to `datetime.now(timezone.utc)` for consistency with the timezone-aware DB schema.
 
 ### Existing Assets
 - ✅ OAuth flow implemented (`/api/strava/connect`, `/api/strava/callback`)
 - ✅ Token exchange logic (`exchange_code_for_tokens()`)
 - ✅ Clean architecture patterns (models, services, routers)
-- ✅ Environment configuration structure
+- ✅ PostgreSQL container already in `docker-compose-dev.yml` with `postgres-data` volume and health checks
 - ✅ Comprehensive testing framework
+
+### Breaking Changes Introduced by This Spec
+- **`/api/strava/connect` response type change**: Current implementation returns `RedirectResponse(302)` directly to Strava. The spec changes this to `{"auth_url": ...}` JSON, delegating the redirect to the frontend. This is intentional (required for auth dependency injection) but **must be coordinated with a frontend change**.
 
 ## Requirements
 
@@ -40,7 +47,7 @@ This specification outlines the implementation of persistent storage for Strava 
 
 ### Database Choice: PostgreSQL (Existing)
 **Rationale**: 
-- **Already Available**: PostgreSQL 17.7 container in both docker-compose.yml and docker-compose-dev.yml
+- **Already Available**: PostgreSQL container in both docker-compose.yml and docker-compose-dev.yml (upgrading to 18.3 in Phase 0)
 - **Production Ready**: Robust, feature-rich database with excellent SQLAlchemy support
 - **Docker Integration**: Already configured with proper networking and health checks
 - **Volume Persistence**: `postgres-data` volume configured for data persistence
@@ -172,9 +179,11 @@ async def get_strava_status(current_user: User = Depends(get_current_user)):
 #### Updated Callback Handler
 ```python
 # Secure OAuth flow with state validation
+# NOTE: This changes /connect from returning RedirectResponse(302) to JSON {"auth_url": ...}
+# The frontend must be updated to handle this — it should read auth_url and redirect the user itself.
 @router.get("/connect")
 async def connect_strava(current_user: User = Depends(get_current_user)):
-    # Generate signed state containing user_id
+    # Requires User.id to be populated from DB (Phase 1 prerequisite)
     state_data = {"user_id": current_user.id, "timestamp": time.time()}
     signed_state = security.sign_data(state_data)  # JWT or HMAC signature
     
@@ -185,7 +194,7 @@ async def connect_strava(current_user: User = Depends(get_current_user)):
         f"response_type=code&"
         f"scope=activity:read_all&"
         f"state={signed_state}&"
-        f"approval_prompt=force"
+        f"approval_prompt=auto"  # Use 'auto' in production; 'force' only for dev/testing
     )
     return {"auth_url": auth_url}
 
@@ -210,20 +219,128 @@ async def strava_callback(
 
 ## Implementation Plan
 
+### Phase 0: Dependency & Runtime Upgrades (2.5 hours)
+
+> **Why now**: As of April 5 2026, multiple major versions are behind across the full stack. Upgrading before adding new infrastructure is cheaper than migrating later. Versions verified directly from npm and official release pages on this date.
+
+#### Backend Version Targets
+| Component | Current | Latest (Apr 5 2026) | Location |
+|-----------|---------|---------------------|----------|
+| PostgreSQL | `17.7` | `18.3` | `docker-compose-dev.yml`, `docker-compose.yml` |
+| Python (Docker image) | `3.13-slim` | `3.14-slim` | `backend/Dockerfile` |
+| Python (`pyproject.toml`) | `requires-python = ">=3.9"` | `requires-python = ">=3.14"` | `backend/pyproject.toml` |
+
+#### Frontend Version Targets
+| Package | Current | Latest (Apr 5 2026) | Notes |
+|---------|---------|---------------------|-------|
+| `react` / `react-dom` | `^19.1.0` | `19.2.4` | Minor bump, no breaking changes |
+| `react-router-dom` | `^7.7.0` | **Remove** | v7 re-exports from `react-router`; `react-router-dom` is legacy shim |
+| `react-router` | not installed | `7.14.0` | Replace `react-router-dom` with this |
+| `@types/react-router-dom` | `^5.3.3` | **Remove** | v5 types, wrong for v7; `react-router` v7 ships its own types |
+| `vite` | `^7.0.4` | `8.0.3` | **Major** — check migration guide |
+| `@vitejs/plugin-react` | `^4.6.0` | `6.0.1` | **Major** — must match Vite 8 |
+| `typescript` | `~5.8.3` | `6.0.2` | **Major** — check breaking changes |
+| `eslint` | `^9.30.1` | `10.2.0` | **Major** — check config compatibility |
+| `prettier` | `^3.6.2` | `3.8.1` | Minor bump |
+| `typescript-eslint` | `^8.35.1` | `8.58.0` | Minor bump |
+
+#### Library Replacements Required for Python 3.14
+
+Two production dependencies are **unmaintained** and incompatible with the Python 3.14 upgrade path:
+
+1. **`passlib` → `pwdlib` (or `bcrypt` directly)**
+   - `passlib` has not been maintained since 2020. `bcrypt>=5.0.0` (which has explicit Python 3.14 support) broke passlib's package detection.
+   - The project currently pins `bcrypt>=3.2.0,<4.0.0` in `pyproject.toml` specifically to work around this — that pin must be removed.
+   - **Replacement**: Use `pwdlib[bcrypt]` (actively maintained passlib successor) or call `bcrypt` directly. Either removes the passlib dependency entirely.
+   - **Impact**: `AuthService.verify_password`, `AuthService.get_password_hash`, and the `CryptContext` setup in `app/services/auth_service.py` must be updated.
+
+2. **`python-jose` → `PyJWT`**
+   - `python-jose` last released 2023, has open CVEs, and is effectively abandoned (FastAPI's own docs now recommend `PyJWT` as the replacement).
+   - **Replacement**: `PyJWT>=2.8.0` with `cryptography` as backend (already being added in Phase 1).
+   - **Impact**: `AuthService.create_access_token`, `AuthService.verify_token`, and all `from jose import ...` imports in `app/services/auth_service.py` must be updated to `import jwt` (PyJWT).
+   - **API contract unchanged**: JWT token structure (`sub`, `exp`) stays identical — only the signing/decoding library changes.
+
+#### Backend Steps
+1. **`docker-compose-dev.yml`**: `image: postgres:17.7` → `image: postgres:18.3`
+2. **`docker-compose.yml`**: `image: postgres:17.7` → `image: postgres:18.3` (same change, second compose file)
+3. **`backend/Dockerfile`**: `FROM python:3.13-slim` → `FROM python:3.14-slim`
+4. **`frontend/Dockerfile`**: Already `node:24-alpine` ✅ — no change needed
+5. **Replace `passlib`**: Remove `passlib` and update bcrypt pin to `bcrypt>=4.0.0`. Rewrite password hashing in `auth_service.py` using `pwdlib[bcrypt]` or `bcrypt` directly.
+6. **Replace `python-jose`**: Remove `python-jose[cryptography]`, add `PyJWT>=2.8.0`. Update all JWT signing/decoding code in `auth_service.py`.
+7. **Update `pyproject.toml`**: Bump `requires-python`, remove replaced libraries, add new ones.
+8. **Run existing test suite**: Confirm all auth tests pass with the new libraries before proceeding to Phase 1. The existing unit and integration tests in `tests/` cover the auth flow and serve as the regression gate.
+
+#### Node / npm
+| Component | Current (Dockerfile) | Latest (Apr 5 2026) | Status |
+|-----------|---------------------|---------------------|--------|
+| Node.js | `node:24-alpine` | `24.14.1` LTS | ✅ Current — no change needed |
+| npm | unpinned (ships with Node 24) | `11.12.1` | ✅ No action needed |
+
+No version bump required. However, Node version is not pinned for local development — no `.nvmrc` or `engines` field exists. Add both as part of Phase 0 to prevent version drift across environments.
+
+#### Frontend Steps
+1. **Add `.nvmrc` and `engines` field**: Create `frontend/.nvmrc` containing `24`. Add `"engines": { "node": ">=24" }` to `frontend/package.json`. This pins local dev to match the Docker image.
+2. **Replace `react-router-dom` with `react-router`**: Remove `react-router-dom` and `@types/react-router-dom` from `package.json`. Add `react-router@7.14.0`. All source files already import from `'react-router-dom'` — do a project-wide find-and-replace of `'react-router-dom'` → `'react-router'` across all `.tsx`/`.ts` files. The API is identical; only the package name changes.
+3. **Bump minor packages**: Update `react`/`react-dom` → `19.2.4`, `prettier` → `3.8.1`, `typescript-eslint` → `8.58.0`.
+4. **Upgrade Vite 7 → 8 and `@vitejs/plugin-react` 4 → 6**: Review the [Vite 8 migration guide](https://vite.dev/guide/migration) before upgrading. Update `vite.config.ts` if any deprecated options are used.
+5. **Upgrade TypeScript 5 → 6**: Review [TypeScript 6 breaking changes](https://devblogs.microsoft.com/typescript/) before upgrading. Run `tsc --noEmit` to surface any type errors introduced by the new version.
+6. **Upgrade ESLint 9 → 10**: Review [ESLint 10 migration guide](https://eslint.org/docs/latest/use/migrate-to-10.0.0). ESLint 10 drops Node 18 support — confirm Node version in CI/local is ≥20.
+7. **Run frontend type-check and lint**: `npm run check-all` must pass cleanly before proceeding.
+
+#### Updated `package.json` dependencies (after Phase 0)
+```json
+{
+  "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router": "^7.14.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.2.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.2.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "prettier": "^3.8.1",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.0",
+    "vite": "^8.0.3"
+  }
+}
+```
+
+#### Updated `pyproject.toml` dependencies (after Phase 0)
+```toml
+dependencies = [
+    "fastapi>=0.116.0",
+    "uvicorn>=0.32.0",
+    "PyJWT>=2.8.0",           # Replaces python-jose
+    "pwdlib[bcrypt]>=0.2.0",  # Replaces passlib + bcrypt pin
+    "python-dotenv>=1.0.1",
+    "email-validator>=2.1.0",
+    "httpx>=0.28.0",
+]
+```
+
 ### Phase 1: Database Foundation (2 hours)
 1. **Dependencies**: Add SQLAlchemy, Alembic, cryptography, psycopg2-binary to `pyproject.toml`
-2. **Database Setup**: Create `database.py` with sync SQLAlchemy engine and session management
-3. **Base Models**: Implement `models/base.py` with timezone-aware timestamps and auto-updating `updated_at`
+2. **Database Setup**: Create `database.py` with sync SQLAlchemy engine and session management. Wrap all sync DB calls in `asyncio.to_thread()` (or `run_in_executor`) when called from async FastAPI route handlers — sync SQLAlchemy blocks the event loop otherwise.
+3. **Base Models**: Implement `models/base.py` with timezone-aware timestamps and auto-updating `updated_at`. Fix `UserInDB.created_at` / `updated_at` default from `datetime.utcnow` (deprecated, timezone-naive) to `datetime.now(timezone.utc)`.
 4. **Migration Setup**: Initialize Alembic with proper configuration at backend root level
 5. **User Table**: Create users table with proper indexes and constraints
-6. **Auth Migration**: Replace `fake_users_db` with database repository, maintain same API contract
+6. **Add `id` to Pydantic `User` model**: Add `id: int` to the `User` model in `app/models/user.py`. This is a **hard dependency for Phase 2** — `current_user.id` is used throughout Strava token storage and cannot be resolved until this field exists. Also update `get_current_user` in `app/auth/dependencies.py` to populate it from the DB row.
+7. **Auth Migration**: Replace `fake_users_db` with database repository, maintain same API contract. JWT `sub` claim remains `email` — no change to token structure.
+8. **Create `.env.example` files**: Create `backend/.env.example` and root `.env.example` with all required placeholder variables (neither file currently exists).
 
 ### Phase 2: Strava Token Storage (1.5 hours)
 1. **Token Model**: Create `models/strava_token.py` with one-to-one constraints and encrypted fields
-2. **Encryption**: Implement `utils/security.py` with Fernet encryption for access/refresh tokens only
+2. **Encryption**: Implement `utils/security.py` with Fernet encryption for access/refresh tokens only. **Fernet key format**: the `STRAVA_ENCRYPTION_KEY` env var must be a URL-safe base64-encoded 32-byte key, not a raw string. Generate with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and document this in `.env.example`.
 3. **Repository Layer**: Create `repositories/strava_token_repository.py` with CRUD operations
 4. **Service Layer**: Implement `services/strava_service.py` with token storage and refresh logic
-5. **Storage Integration**: Update `/api/strava/callback` to validate state and store encrypted tokens
+5. **Storage Integration**: Update `/api/strava/callback` to validate state and store encrypted tokens. **Prerequisite**: Phase 1 step 6 (`User.id`) must be complete before this step.
 
 ### Phase 3: Token Management & API (1.5 hours)
 1. **Token Refresh Logic**: Implement automatic refresh with 5-minute safety window
@@ -251,21 +368,31 @@ async def strava_callback(
 
 ### Environment Variables
 ```bash
-# Already in .env.example:
+# Create root .env.example (file does not currently exist):
 POSTGRES_DB=your_postgres_db
 POSTGRES_USER=your_postgres_user
 POSTGRES_PASSWORD=your_postgres_password
+FRONTEND_URL=http://cycloveda.local
 
-# Add to backend/.env.example:
-DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-STRAVA_ENCRYPTION_KEY=your_fernet_encryption_key_32_bytes
+# Create backend/.env.example (file does not currently exist):
+DATABASE_URL=postgresql://your_postgres_user:your_postgres_password@postgres:5432/your_postgres_db
+STRAVA_CLIENT_ID=your_strava_client_id
+STRAVA_CLIENT_SECRET=your_strava_client_secret
+STRAVA_REDIRECT_URI=http://api.cycloveda.local/api/strava/callback
+
+# Generate Fernet key: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# Value must be a URL-safe base64-encoded 32-byte key, NOT a raw string
+STRAVA_ENCRYPTION_KEY=your_fernet_base64_key_here
+
+SECRET_KEY=your_jwt_secret_key
 ```
 
 ### Database Configuration Decisions
 - **ORM Mode**: Sync SQLAlchemy (simpler, matches current FastAPI patterns)
+- **Async boundary**: Sync SQLAlchemy DB calls must be wrapped in `asyncio.to_thread()` when invoked from `async def` route handlers to avoid blocking the event loop
 - **Session Management**: Context-local sessions with proper cleanup
 - **Migration Tool**: Alembic at backend root level
-- **Timestamps**: Timezone-aware (TIMESTAMP WITH TIME ZONE)
+- **Timestamps**: Timezone-aware (TIMESTAMP WITH TIME ZONE). Fix `UserInDB` defaults from `datetime.utcnow` to `datetime.now(timezone.utc)` as part of Phase 1.
 
 ## Security Considerations
 
@@ -402,15 +529,16 @@ def seed_dev_users():
 
 ## Timeline
 
-**Total Estimated Time**: 5-6 hours
+**Total Estimated Time**: 8-9 hours
 
 **Phase Breakdown**:
+- Phase 0: Dependency & Runtime Upgrades - 2.5 hours (backend library replacements + frontend major version bumps)
 - Phase 1: Database Foundation - 2 hours
-- Phase 2: Strava Token Storage - 1.5 hours  
+- Phase 2: Strava Token Storage - 1.5 hours
 - Phase 3: Token Management & API - 1.5 hours
 - Phase 4: Testing & Documentation - 1 hour
 
-**Dependencies**: None - can start immediately
+**Dependencies**: Phase 0 must complete and all tests pass before Phase 1 begins.
 
 ## Next Steps
 
@@ -431,11 +559,12 @@ def seed_dev_users():
 
 ### Architecture Decisions
 1. **Database**: PostgreSQL (existing container) with sync SQLAlchemy
-2. **Encryption**: Fernet encryption for access/refresh tokens only
+2. **Encryption**: Fernet encryption for access/refresh tokens only. Key must be base64-encoded (use `Fernet.generate_key()`).
 3. **Relationship**: One-to-one user-to-Strava account mapping
-4. **Auth Integration**: Use existing JWT auth dependency, resolve current_user.id
-5. **OAuth Security**: Signed state parameter to prevent CSRF
+4. **Auth Integration**: Use existing JWT auth dependency, resolve `current_user.id`. **Blocker**: `id: int` must be added to the `User` Pydantic model and populated by `get_current_user` before any Strava token storage can reference it.
+5. **OAuth Security**: Signed state parameter to prevent CSRF. State carries `user_id` (integer) — only valid after Phase 1 DB migration assigns stable user IDs.
 6. **Repository Pattern**: Separate repository layer for database operations
+7. **Async boundary**: All sync SQLAlchemy calls from async route handlers must use `asyncio.to_thread()` to avoid blocking the event loop.
 
 ### API Design Decisions
 1. **Disconnect Behavior**: Call Strava revoke API, then delete local tokens
@@ -454,3 +583,5 @@ def seed_dev_users():
 2. **Scaling**: PostgreSQL read replicas when needed
 3. **Monitoring**: Token refresh success/failure metrics
 4. **Security**: Consider connection status field for better UX
+5. **`approval_prompt`**: Currently hardcoded as `force` in both the existing router and spec examples. Change to `auto` for production to avoid forcing re-authorization on every connect attempt.
+6. **Async SQLAlchemy**: If the codebase moves to fully async patterns (e.g. `asyncpg`), the `asyncio.to_thread()` workaround can be removed in favour of native async sessions.
