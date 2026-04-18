@@ -327,20 +327,27 @@ dependencies = [
 
 ### ✅ Phase 1: Database Foundation (Complete)
 1. **Dependencies**: Add SQLAlchemy, Alembic, cryptography, psycopg2-binary to `pyproject.toml`
-2. **Database Setup**: Create `database.py` with sync SQLAlchemy engine and session management. Wrap all sync DB calls in `asyncio.to_thread()` (or `run_in_executor`) when called from async FastAPI route handlers — sync SQLAlchemy blocks the event loop otherwise.
+2. **Database Setup**: Create `database.py` with async SQLAlchemy engine (`create_async_engine`), `AsyncSession`, and `async_sessionmaker`. All DB calls are natively async — no `asyncio.to_thread()` needed. See ADR `2026-04-17-async-sqlalchemy-migration.md`.
 3. **Base Models**: Implement `models/base.py` with timezone-aware timestamps and auto-updating `updated_at`. Fix `UserInDB.created_at` / `updated_at` default from `datetime.utcnow` (deprecated, timezone-naive) to `datetime.now(timezone.utc)`.
 4. **Migration Setup**: Initialize Alembic with proper configuration at backend root level
 5. **User Table**: Create users table with proper indexes and constraints
-6. **Add `id` to Pydantic `User` model**: Add `id: int` to the `User` model in `app/models/user.py`. This is a **hard dependency for Phase 2** — `current_user.id` is used throughout Strava token storage and cannot be resolved until this field exists. Also update `get_current_user` in `app/auth/dependencies.py` to populate it from the DB row.
+6. **Add `id` to Pydantic `User` model**: Add `id: int` to the `User` model in `app/models/user.py`. This is a **hard dependency for Phase 2** — `current_user.id` is used throughout Strava token storage and cannot be resolved until this field exists. Also update `get_current_user` in `app/auth/dependencies.py` to populate it from the DB row. **Note**: Implemented as `id: Optional[int]` — must be tightened to `id: int` (non-optional) as the first step of Phase 2.
 7. **Auth Migration**: Replace `fake_users_db` with database repository, maintain same API contract. JWT `sub` claim remains `email` — no change to token structure.
 8. **Create `.env.example` files**: Create `backend/.env.example` and root `.env.example` with all required placeholder variables (neither file currently exists).
 
 ### Phase 2: Strava Token Storage (1.5 hours) ← **NEXT**
-1. **Token Model**: Create `models/strava_token.py` with one-to-one constraints and encrypted fields
-2. **Encryption**: Implement `utils/security.py` with Fernet encryption for access/refresh tokens only. **Fernet key format**: the `STRAVA_ENCRYPTION_KEY` env var must be a URL-safe base64-encoded 32-byte key, not a raw string. Generate with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and document this in `.env.example`.
-3. **Repository Layer**: Create `repositories/strava_token_repository.py` with CRUD operations
-4. **Service Layer**: Implement `services/strava_service.py` with token storage and refresh logic
-5. **Storage Integration**: Update `/api/strava/callback` to validate state and store encrypted tokens. **Prerequisite**: Phase 1 step 6 (`User.id`) must be complete before this step.
+1. **Pre-check — `User.id` type**: `app/schemas/user.py` currently declares `id: Optional[int]`. Change to `id: int` (non-optional) so Phase 2 code calling `current_user.id` is type-safe. `get_current_user` always fetches from the DB so `None` is never a valid runtime value.
+2. **Token Model**: Create `models/strava_token.py` with one-to-one constraints and encrypted fields
+3. **Register with Alembic**: Add `from app.models.strava_token import StravaTokenORM  # noqa: F401` to `migrations/env.py` (same pattern as `UserORM`). Then generate and apply the migration:
+   ```
+   alembic revision --autogenerate -m "create strava_tokens table"
+   alembic upgrade head
+   ```
+4. **Encryption**: Implement `utils/security.py` with Fernet encryption for access/refresh tokens only. **Fernet key format**: `STRAVA_ENCRYPTION_KEY` must be a URL-safe base64-encoded 32-byte key, not a raw string. Generate with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and document this in `.env.example`.
+5. **Repository Layer**: Create `repositories/strava_token_repository.py` with CRUD operations (async, using `AsyncSession`)
+6. **Service Layer**: Implement `services/strava_service.py` with token storage and refresh logic
+7. **Update `/connect` endpoint**: Change `GET /api/strava/connect` from returning `RedirectResponse(302)` to returning `{"auth_url": ...}` JSON and add `Depends(get_current_user)` (see API Changes section). This is a **breaking change** — coordinate the corresponding frontend update.
+8. **Storage Integration**: Update `/api/strava/callback` to validate the signed OAuth state (`security.verify_signed_data`) and store encrypted tokens via `strava_service.store_tokens(user_id, tokens)`.
 
 ### Phase 3: Token Management & API (1.5 hours)
 1. **Token Refresh Logic**: Implement automatic refresh with 5-minute safety window
@@ -507,7 +514,7 @@ def seed_dev_users():
 - ✅ Critical path testing covers all token flows
 - ✅ No performance regression on existing endpoints
 - ✅ Clean architecture patterns maintained (repositories, services, models)
-- ✅ Sync SQLAlchemy integration matches current FastAPI patterns
+- ✅ Async SQLAlchemy integration matches current FastAPI patterns
 - ✅ Timezone-aware timestamps ensure accurate token expiry logic
 
 ### Operational Success
@@ -559,13 +566,13 @@ def seed_dev_users():
 ## Critical Decisions Made
 
 ### Architecture Decisions
-1. **Database**: PostgreSQL (existing container) with sync SQLAlchemy
+1. **Database**: PostgreSQL (existing container) with async SQLAlchemy (`AsyncEngine` + `AsyncSession` + `asyncpg`)
 2. **Encryption**: Fernet encryption for access/refresh tokens only. Key must be base64-encoded (use `Fernet.generate_key()`).
 3. **Relationship**: One-to-one user-to-Strava account mapping
-4. **Auth Integration**: Use existing JWT auth dependency, resolve `current_user.id`. **Blocker**: `id: int` must be added to the `User` Pydantic model and populated by `get_current_user` before any Strava token storage can reference it.
+4. **Auth Integration**: Use existing JWT auth dependency, resolve `current_user.id`. `id` is populated from the DB row by `get_current_user`. **Phase 2 pre-check**: tighten `id: Optional[int]` → `id: int` in `app/schemas/user.py` before writing any token storage code.
 5. **OAuth Security**: Signed state parameter to prevent CSRF. State carries `user_id` (integer) — only valid after Phase 1 DB migration assigns stable user IDs.
 6. **Repository Pattern**: Separate repository layer for database operations
-7. **Async boundary**: All sync SQLAlchemy calls from async route handlers must use `asyncio.to_thread()` to avoid blocking the event loop.
+7. **Async boundary**: All database operations use native async SQLAlchemy (`AsyncSession`). No `asyncio.to_thread()` wrapping is needed — the async migration was completed as part of Phase 1. See ADR `2026-04-17-async-sqlalchemy-migration.md`.
 
 ### API Design Decisions
 1. **Disconnect Behavior**: Call Strava revoke API, then delete local tokens
