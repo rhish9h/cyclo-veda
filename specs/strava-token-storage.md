@@ -219,7 +219,7 @@ async def strava_callback(
 
 ## Implementation Plan
 
-### Phase 0: Dependency & Runtime Upgrades (2.5 hours)
+### ✅ Phase 0: Dependency & Runtime Upgrades (Complete)
 
 > **Why now**: As of April 5 2026, multiple major versions are behind across the full stack. Upgrading before adding new infrastructure is cheaper than migrating later. Versions verified directly from npm and official release pages on this date.
 
@@ -325,7 +325,7 @@ dependencies = [
 ]
 ```
 
-### Phase 1: Database Foundation (2 hours)
+### ✅ Phase 1: Database Foundation (Complete)
 1. **Dependencies**: Add SQLAlchemy, Alembic, cryptography, psycopg2-binary to `pyproject.toml`
 2. **Database Setup**: Create `database.py` with sync SQLAlchemy engine and session management. Wrap all sync DB calls in `asyncio.to_thread()` (or `run_in_executor`) when called from async FastAPI route handlers — sync SQLAlchemy blocks the event loop otherwise.
 3. **Base Models**: Implement `models/base.py` with timezone-aware timestamps and auto-updating `updated_at`. Fix `UserInDB.created_at` / `updated_at` default from `datetime.utcnow` (deprecated, timezone-naive) to `datetime.now(timezone.utc)`.
@@ -335,7 +335,7 @@ dependencies = [
 7. **Auth Migration**: Replace `fake_users_db` with database repository, maintain same API contract. JWT `sub` claim remains `email` — no change to token structure.
 8. **Create `.env.example` files**: Create `backend/.env.example` and root `.env.example` with all required placeholder variables (neither file currently exists).
 
-### Phase 2: Strava Token Storage (1.5 hours)
+### Phase 2: Strava Token Storage (1.5 hours) ← **NEXT**
 1. **Token Model**: Create `models/strava_token.py` with one-to-one constraints and encrypted fields
 2. **Encryption**: Implement `utils/security.py` with Fernet encryption for access/refresh tokens only. **Fernet key format**: the `STRAVA_ENCRYPTION_KEY` env var must be a URL-safe base64-encoded 32-byte key, not a raw string. Generate with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and document this in `.env.example`.
 3. **Repository Layer**: Create `repositories/strava_token_repository.py` with CRUD operations
@@ -388,11 +388,12 @@ SECRET_KEY=your_jwt_secret_key
 ```
 
 ### Database Configuration Decisions
-- **ORM Mode**: Sync SQLAlchemy (simpler, matches current FastAPI patterns)
-- **Async boundary**: Sync SQLAlchemy DB calls must be wrapped in `asyncio.to_thread()` when invoked from `async def` route handlers to avoid blocking the event loop
-- **Session Management**: Context-local sessions with proper cleanup
-- **Migration Tool**: Alembic at backend root level
-- **Timestamps**: Timezone-aware (TIMESTAMP WITH TIME ZONE). Fix `UserInDB` defaults from `datetime.utcnow` to `datetime.now(timezone.utc)` as part of Phase 1.
+- **ORM Mode**: Async SQLAlchemy with `AsyncEngine` + `AsyncSession` + `asyncpg` driver
+- **Async boundary**: All DB calls are natively async — no `asyncio.to_thread()` needed
+- **Session Management**: `async_sessionmaker` with `async with` context manager per request
+- **Migration Tool**: Alembic at backend root level, running through async engine via `run_sync`
+- **Driver**: `asyncpg` only — `psycopg2-binary` removed
+- **Timestamps**: Timezone-aware (TIMESTAMP WITH TIME ZONE).
 
 ## Security Considerations
 
@@ -584,4 +585,4 @@ def seed_dev_users():
 3. **Monitoring**: Token refresh success/failure metrics
 4. **Security**: Consider connection status field for better UX
 5. **`approval_prompt`**: Currently hardcoded as `force` in both the existing router and spec examples. Change to `auto` for production to avoid forcing re-authorization on every connect attempt.
-6. **Async SQLAlchemy**: If the codebase moves to fully async patterns (e.g. `asyncpg`), the `asyncio.to_thread()` workaround can be removed in favour of native async sessions.
+6. **Async SQLAlchemy**: Completed ahead of Phase 2. The `asyncio.to_thread()` workaround has been removed. All DB operations use native `AsyncSession` via `asyncpg`. See ADR `2026-04-17-async-sqlalchemy-migration.md`.

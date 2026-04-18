@@ -1,21 +1,20 @@
 """Database connection and session management.
 
-Uses sync SQLAlchemy (simpler, matches current FastAPI patterns).
-All sync DB calls from async route handlers must be wrapped in
-asyncio.to_thread() to avoid blocking the event loop.
+Uses async SQLAlchemy with AsyncEngine and AsyncSession.
+All database operations are natively async and can be awaited
+directly from async FastAPI route handlers.
 
 Session usage:
     from app.database import get_db
-    from sqlalchemy.orm import Session
+    from sqlalchemy.ext.asyncio import AsyncSession
 
-    def my_endpoint(db: Session = Depends(get_db)):
+    async def my_endpoint(db: AsyncSession = Depends(get_db)):
         ...
 """
 
 import os
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 def _get_database_url() -> str:
     url = os.getenv("DATABASE_URL")
@@ -28,12 +27,12 @@ def _get_database_url() -> str:
 
 
 def _make_engine():
-    return create_engine(
+    return create_async_engine(
         _get_database_url(),
         pool_pre_ping=True,  # Verify connections before use (handles stale connections)
         pool_size=5,
         max_overflow=10,
-        connect_args={},
+        connect_args={},  # asyncpg handles most settings automatically
     )
 
 
@@ -48,21 +47,23 @@ def _session_factory():
     global _engine, _SessionLocal
     if _SessionLocal is None:
         _engine = _make_engine()
-        _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+        _SessionLocal = async_sessionmaker(
+            bind=_engine,
+            autocommit=False,
+            autoflush=False,
+            class_=AsyncSession,
+        )
     return _SessionLocal
 
 
-def get_db():
-    """FastAPI dependency that yields a database session.
+async def get_db():
+    """FastAPI dependency that yields an async database session.
 
     Ensures the session is always closed after the request, even on errors.
     The engine and session factory are created on first call (lazy init).
 
     Yields:
-        Session: SQLAlchemy database session
+        AsyncSession: SQLAlchemy async database session
     """
-    db: Session = _session_factory()()
-    try:
+    async with _session_factory()() as db:
         yield db
-    finally:
-        db.close()

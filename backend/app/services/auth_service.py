@@ -5,9 +5,9 @@ This module provides authentication and authorization services including:
 - JWT token creation and validation
 - User authentication and retrieval via the database repository
 
-All user-lookup methods accept a SQLAlchemy Session so they are testable
+All user-lookup methods accept an AsyncSession so they are testable
 in isolation (mock the session / repository) and work inside async FastAPI
-handlers via asyncio.to_thread().
+handlers natively.
 """
 
 import os
@@ -18,7 +18,7 @@ import jwt
 from jwt import InvalidTokenError
 from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..schemas.user import User
 from ..schemas.token import TokenData
@@ -85,7 +85,7 @@ class AuthService:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def get_user(db: Session, email: str) -> Optional[User]:
+    async def get_user(db: AsyncSession, email: str) -> Optional[User]:
         """Retrieve a user by email address from the database.
 
         Args:
@@ -95,7 +95,7 @@ class AuthService:
         Returns:
             Optional[User]: Pydantic User schema if found, None otherwise
         """
-        row = user_repository.get_by_email(db, email)
+        row = await user_repository.get_by_email(db, email)
         if row is None:
             return None
         return User(
@@ -106,7 +106,7 @@ class AuthService:
         )
 
     @staticmethod
-    def authenticate_user(db: Session, email: str, password: str):
+    async def authenticate_user(db: AsyncSession, email: str, password: str):
         """Authenticate a user with email and password.
 
         Args:
@@ -118,7 +118,7 @@ class AuthService:
             User: Pydantic User schema if authentication successful
             False: If authentication fails (user not found or wrong password)
         """
-        row = user_repository.get_by_email(db, email)
+        row = await user_repository.get_by_email(db, email)
         if row is None:
             return False
         if not AuthService.verify_password(password, row.hashed_password):

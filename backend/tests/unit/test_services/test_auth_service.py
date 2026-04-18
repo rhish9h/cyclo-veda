@@ -13,7 +13,7 @@ Test Categories:
 """
 
 import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import AsyncMock, patch, Mock
 from datetime import datetime, timedelta, timezone
 import jwt
 from jwt import InvalidTokenError
@@ -92,71 +92,71 @@ class TestUserOperations:
         row.hashed_password = AuthService.get_password_hash("password")
         return row
 
-    def test_get_user_existing_user(self):
+    async def test_get_user_existing_user(self):
         """Test retrieving an existing user"""
         mock_db = Mock()
         row = self._make_mock_row()
-        with patch('app.repositories.user_repository.UserRepository.get_by_email', return_value=row):
-            user = AuthService.get_user(mock_db, "admin@cycloveda.com")
+        with patch('app.repositories.user_repository.UserRepository.get_by_email', new=AsyncMock(return_value=row)):
+            user = await AuthService.get_user(mock_db, "admin@cycloveda.com")
 
         assert user is not None
         assert isinstance(user, User)
         assert user.email == "admin@cycloveda.com"
         assert user.is_active is True
 
-    def test_get_user_nonexistent_user(self):
+    async def test_get_user_nonexistent_user(self):
         """Test retrieving a non-existent user"""
         mock_db = Mock()
-        with patch('app.repositories.user_repository.UserRepository.get_by_email', return_value=None):
-            user = AuthService.get_user(mock_db, "nonexistent@example.com")
+        with patch('app.repositories.user_repository.UserRepository.get_by_email', new=AsyncMock(return_value=None)):
+            user = await AuthService.get_user(mock_db, "nonexistent@example.com")
 
         assert user is None
 
-    def test_get_user_empty_email(self):
+    async def test_get_user_empty_email(self):
         """Test retrieving user with empty email"""
         mock_db = Mock()
-        with patch('app.repositories.user_repository.UserRepository.get_by_email', return_value=None):
-            user = AuthService.get_user(mock_db, "")
+        with patch('app.repositories.user_repository.UserRepository.get_by_email', new=AsyncMock(return_value=None)):
+            user = await AuthService.get_user(mock_db, "")
 
         assert user is None
 
-    def test_authenticate_user_valid_credentials(self):
+    async def test_authenticate_user_valid_credentials(self):
         """Test user authentication with valid credentials"""
         mock_db = Mock()
         row = self._make_mock_row()
-        with patch('app.repositories.user_repository.UserRepository.get_by_email', return_value=row):
-            user = AuthService.authenticate_user(mock_db, "admin@cycloveda.com", "password")
+        with patch('app.repositories.user_repository.UserRepository.get_by_email', new=AsyncMock(return_value=row)):
+            user = await AuthService.authenticate_user(mock_db, "admin@cycloveda.com", "password")
 
         assert user is not None
         assert isinstance(user, User)
         assert user.email == "admin@cycloveda.com"
 
-    def test_authenticate_user_invalid_password(self):
+    async def test_authenticate_user_invalid_password(self):
         """Test user authentication with invalid password"""
         mock_db = Mock()
         row = self._make_mock_row()
-        with patch('app.repositories.user_repository.UserRepository.get_by_email', return_value=row):
-            user = AuthService.authenticate_user(mock_db, "admin@cycloveda.com", "wrongpassword")
+        with patch('app.repositories.user_repository.UserRepository.get_by_email', new=AsyncMock(return_value=row)):
+            user = await AuthService.authenticate_user(mock_db, "admin@cycloveda.com", "wrongpassword")
 
         assert user is False
 
-    def test_authenticate_user_nonexistent_user(self):
+    async def test_authenticate_user_nonexistent_user(self):
         """Test user authentication with non-existent user"""
         mock_db = Mock()
-        with patch('app.repositories.user_repository.UserRepository.get_by_email', return_value=None):
-            user = AuthService.authenticate_user(mock_db, "nonexistent@example.com", "password")
+        with patch('app.repositories.user_repository.UserRepository.get_by_email', new=AsyncMock(return_value=None)):
+            user = await AuthService.authenticate_user(mock_db, "nonexistent@example.com", "password")
 
         assert user is False
 
-    def test_authenticate_user_inactive_user(self):
+    async def test_authenticate_user_inactive_user(self):
         """Test that authenticate_user returns the user regardless of is_active (service does not check).
 
         Active/inactive gating is enforced by get_current_active_user dependency, not here.
         """
         mock_db = Mock()
         row = self._make_mock_row(is_active=False)
-        with patch('app.repositories.user_repository.UserRepository.get_by_email', return_value=row):
-            user = AuthService.authenticate_user(mock_db, "inactive@example.com", "password")
+        with patch('app.repositories.user_repository.UserRepository.get_by_email', new=AsyncMock(return_value=row)):
+            user = await AuthService.authenticate_user(mock_db, "inactive@example.com", "password")
 
         assert user is not None
 
@@ -280,12 +280,12 @@ class TestEdgeCasesAndErrorHandling:
         
         assert AuthService.verify_password(password, hashed) is True
     
-    def test_authenticate_user_case_sensitivity(self):
+    async def test_authenticate_user_case_sensitivity(self):
         """Test that email authentication is case sensitive"""
         mock_db = Mock()
         # Repository returns None for mismatched case (case-sensitive lookup)
-        with patch('app.repositories.user_repository.UserRepository.get_by_email', return_value=None):
-            user = AuthService.authenticate_user(mock_db, "ADMIN@CYCLOVEDA.COM", "password")
+        with patch('app.repositories.user_repository.UserRepository.get_by_email', new=AsyncMock(return_value=None)):
+            user = await AuthService.authenticate_user(mock_db, "ADMIN@CYCLOVEDA.COM", "password")
 
         # Should fail because email case doesn't match
         assert user is False

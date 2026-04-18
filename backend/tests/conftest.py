@@ -17,7 +17,7 @@ Usage:
 import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import AsyncMock, Mock, MagicMock, patch
 import os
 from datetime import datetime, timedelta
 import jwt
@@ -81,7 +81,7 @@ def override_db():
     admin_row = _make_row("admin@cycloveda.com", "admin")
     user_row = _make_row("user@example.com", "testuser")
 
-    def fake_get_by_email(db, email):
+    async def fake_get_by_email(db, email):
         if email == "admin@cycloveda.com":
             return admin_row
         if email == "user@example.com":
@@ -89,7 +89,7 @@ def override_db():
         return None
 
     # Patch repository at the module level so AuthService picks it up
-    with patch.object(UserRepository, 'get_by_email', side_effect=fake_get_by_email):
+    with patch.object(UserRepository, 'get_by_email', new=AsyncMock(side_effect=fake_get_by_email)):
         app.dependency_overrides[get_db] = lambda: mock_session
         yield mock_session
         app.dependency_overrides.pop(get_db, None)

@@ -38,7 +38,7 @@ dependencies = [
     "httpx>=0.28.0",
     "sqlalchemy>=2.0.0",      # ORM and database toolkit
     "alembic>=1.13.0",        # Database migration tool
-    "psycopg2-binary>=2.9.0", # PostgreSQL driver
+    "asyncpg>=0.30.0",        # PostgreSQL driver
     "cryptography>=42.0.0",   # Fernet encryption for Strava tokens (Phase 2)
 ]
 

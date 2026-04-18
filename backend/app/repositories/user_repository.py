@@ -1,15 +1,15 @@
-"""User repository — database CRUD operations for the users table.
+"""User repository - database CRUD operations for the users table.
 
-All methods are synchronous (sync SQLAlchemy). When called from async
-FastAPI route handlers, wrap in asyncio.to_thread():
+All methods are async (async SQLAlchemy). Can be called directly
+from async FastAPI route handlers:
 
-    import asyncio
-    user = await asyncio.to_thread(user_repository.get_by_email, db, email)
+    user = await user_repository.get_by_email(db, email)
 """
 
 from typing import Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.user import UserORM
 
@@ -18,7 +18,7 @@ class UserRepository:
     """Database access layer for the users table."""
 
     @staticmethod
-    def get_by_email(db: Session, email: str) -> Optional[UserORM]:
+    async def get_by_email(db: AsyncSession, email: str) -> Optional[UserORM]:
         """Fetch a user row by email address (case-sensitive).
 
         Args:
@@ -28,10 +28,13 @@ class UserRepository:
         Returns:
             UserORM row if found, None otherwise
         """
-        return db.query(UserORM).filter(UserORM.email == email).first()
+        result = await db.execute(
+            select(UserORM).filter(UserORM.email == email)
+        )
+        return result.scalar_one_or_none()
 
     @staticmethod
-    def get_by_id(db: Session, user_id: int) -> Optional[UserORM]:
+    async def get_by_id(db: AsyncSession, user_id: int) -> Optional[UserORM]:
         """Fetch a user row by primary key.
 
         Args:
@@ -41,10 +44,13 @@ class UserRepository:
         Returns:
             UserORM row if found, None otherwise
         """
-        return db.query(UserORM).filter(UserORM.id == user_id).first()
+        result = await db.execute(
+            select(UserORM).filter(UserORM.id == user_id)
+        )
+        return result.scalar_one_or_none()
 
     @staticmethod
-    def get_by_username(db: Session, username: str) -> Optional[UserORM]:
+    async def get_by_username(db: AsyncSession, username: str) -> Optional[UserORM]:
         """Fetch a user row by username (case-sensitive).
 
         Args:
@@ -54,11 +60,14 @@ class UserRepository:
         Returns:
             UserORM row if found, None otherwise
         """
-        return db.query(UserORM).filter(UserORM.username == username).first()
+        result = await db.execute(
+            select(UserORM).filter(UserORM.username == username)
+        )
+        return result.scalar_one_or_none()
 
     @staticmethod
-    def create(
-        db: Session,
+    async def create(
+        db: AsyncSession,
         *,
         email: str,
         username: str,
@@ -90,12 +99,12 @@ class UserRepository:
             is_superuser=is_superuser,
         )
         db.add(user)
-        db.commit()
-        db.refresh(user)
+        await db.commit()
+        await db.refresh(user)
         return user
 
     @staticmethod
-    def set_active(db: Session, user: UserORM, *, is_active: bool) -> UserORM:
+    async def set_active(db: AsyncSession, user: UserORM, *, is_active: bool) -> UserORM:
         """Enable or disable a user account.
 
         Args:
@@ -107,8 +116,8 @@ class UserRepository:
             Updated UserORM row
         """
         user.is_active = is_active
-        db.commit()
-        db.refresh(user)
+        await db.commit()
+        await db.refresh(user)
         return user
 
 
