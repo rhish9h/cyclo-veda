@@ -8,19 +8,24 @@ import hmac
 import hashlib
 import os
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.database import get_db
+from app.repositories.strava_token_repository import strava_token_repository
 from app.schemas.user import User
+from app.schemas.strava import StravaActivitiesResponse, StravaActivity, StravaStatus
 from app.services.strava_service import (
+    TokenRevokedError,
     check_token_status,
     get_user_tokens,
+    get_valid_token,
     refresh_access_token,
     revoke_and_delete,
     store_tokens,
@@ -74,25 +79,8 @@ def _verify_state(raw_state: str) -> Optional[int]:
 
 
 # --------------------------------------------------------------------------- #
-#  Helpers (must be defined before routes that use them via Depends)         #
+#  Helpers                                                                    #
 # --------------------------------------------------------------------------- #
-
-
-async def _extract_bearer_token(request: Request) -> str:
-    """Extract and validate a Strava bearer token from the Authorization header."""
-    auth_header = request.headers.get("authorization")
-    if not auth_header:
-        raise HTTPException(status_code=401, detail="No Authorization header")
-
-    parts = auth_header.split()
-    if len(parts) != 2 or parts[0].lower() != "bearer":
-        raise HTTPException(status_code=401, detail="Invalid Authorization header")
-
-    token = parts[1]
-    if not token:
-        raise HTTPException(status_code=401, detail="Empty token")
-
-    return token
 
 
 async def _exchange_code_for_tokens(code: str) -> dict[str, Any]:
@@ -152,7 +140,6 @@ async def connect_strava(user: User = Depends(get_current_user)):
 
 @router.get("/callback")
 async def strava_callback(
-    request: Request,
     state: Optional[str] = Query(None),
     code: Optional[str] = Query(None),
     error: Optional[str] = Query(None),
@@ -208,11 +195,24 @@ async def strava_callback(
     )
 
 
-@router.get("/status")
+@router.get("/status", response_model=StravaStatus)
 async def get_strava_status(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Check connection status and token expiry for the authenticated user."""
-    status = await check_token_status(db, user.id)
-    return JSONResponse(content=status)
+    record = await strava_token_repository.get_by_user_id(db, user.id)
+    if not record or not record.access_token:
+        return StravaStatus(connected=False)
+    now_utc = datetime.now(timezone.utc)
+    is_expiring_soon = bool(
+        record.expires_at and (record.expires_at - now_utc) < timedelta(minutes=5)
+    )
+    return StravaStatus(
+        connected=True,
+        athlete_id=record.strava_athlete_id,
+        expires_at=record.expires_at,
+        is_expiring_soon=is_expiring_soon,
+        has_refresh_token=bool(record.refresh_token),
+        scope=record.scope,
+    )
 
 
 @router.delete("/disconnect")
@@ -243,41 +243,71 @@ async def refresh_strava_token(user: User = Depends(get_current_user), db: Async
 
 
 @router.get("/user")
-async def get_current_strava_user(token: str = Depends(get_user_bearer_token)):
-    """Fetch the current Strava user profile using a bearer token."""
+async def get_current_strava_user(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Fetch the current Strava user (athlete) profile using stored tokens."""
+    try:
+        token_record = await get_valid_token(db, user.id)
+    except TokenRevokedError as exc:
+        raise HTTPException(status_code=401, detail=str(exc))
+
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.get(
             "https://www.strava.com/api/v3/athlete",
-            headers={"Authorization": f"Bearer {token}"},
+            headers={"Authorization": f"Bearer {token_record.access_token}"},
         )
 
+    if resp.status_code == 401:
+        raise HTTPException(status_code=401, detail="Strava token rejected — please reconnect")
     if resp.status_code != 200:
-        return JSONResponse(content={"error": "Failed to fetch Strava user profile"}, status_code=resp.status_code)
+        raise HTTPException(status_code=502, detail=f"Strava API error: {resp.status_code}")
     return resp.json()
 
 
-@router.get("/activities")
-async def get_current_strava_activities(
-    auth_token: str = Depends(get_user_bearer_token),
-    before: Optional[int] = Query(None, description="Only return activities created before this Unix timestamp"),
-    after: Optional[int] = Query(None, description="Only return activities created after this Unix timestamp"),
-    limit: int = Query(30, ge=1, le=100),
-    page: int = Query(1, ge=1),
+@router.get("/activities", response_model=StravaActivitiesResponse)
+async def get_strava_activities(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    before: Optional[int] = Query(None, description="Only return activities before this Unix timestamp"),
+    after: Optional[int] = Query(None, description="Only return activities after this Unix timestamp"),
+    per_page: int = Query(30, ge=1, le=100, description="Number of activities per page (max 100)"),
+    page: int = Query(1, ge=1, description="Page number"),
 ):
-    """Fetch Strava activities."""
-    params: dict[str, Any] = {"per_page": limit, "page": page}
-    if before:
+    """Fetch paginated Strava activities for the authenticated user.
+
+    Automatically refreshes the stored token if it is within 5 minutes of expiry.
+    Returns a normalized response schema rather than the raw Strava payload.
+    """
+    try:
+        token_record = await get_valid_token(db, user.id)
+    except TokenRevokedError as exc:
+        raise HTTPException(status_code=401, detail=str(exc))
+
+    params: dict[str, Any] = {"per_page": per_page, "page": page}
+    if before is not None:
         params["before"] = before
-    if after:
+    if after is not None:
         params["after"] = after
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.get(
             "https://www.strava.com/api/v3/athlete/activities",
-            headers={"Authorization": f"Bearer {auth_token}"},
+            headers={"Authorization": f"Bearer {token_record.access_token}"},
             params=params,
         )
 
+    if resp.status_code == 401:
+        raise HTTPException(status_code=401, detail="Strava token rejected — please reconnect")
     if resp.status_code != 200:
-        return JSONResponse(content={"error": "Failed to fetch activities"}, status_code=resp.status_code)
-    return resp.json()
+        raise HTTPException(status_code=502, detail=f"Strava API error: {resp.status_code}")
+
+    raw_activities: list[dict] = resp.json()
+    normalized = [StravaActivity.from_strava(a) for a in raw_activities]
+    return StravaActivitiesResponse(
+        activities=normalized,
+        page=page,
+        per_page=per_page,
+        count=len(normalized),
+    )

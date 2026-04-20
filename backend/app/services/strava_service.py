@@ -6,8 +6,9 @@ and encryption utilities.
 
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Literal, Optional
+from typing import Dict, Optional
 
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.strava_token import StravaTokenORM
@@ -22,6 +23,19 @@ STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 
 class StravaServiceError(Exception):
     """Base exception for Strava service operations."""
+    pass
+
+
+class StravaRefreshError(StravaServiceError):
+    """Raised when a Strava token refresh attempt fails (e.g. revoked, network error)."""
+    pass
+
+
+class TokenRevokedError(StravaServiceError):
+    """Raised when a token has been revoked or is unrecoverable.
+
+    Callers should treat this as a 401 and prompt the user to reconnect.
+    """
     pass
 
 
@@ -169,23 +183,68 @@ async def check_token_status(db: AsyncSession, user_id: int) -> Dict:
     }
 
 
-async def refresh_access_token(db: AsyncSession, user_id: int) -> Optional[Dict]:
-    """Attempt to refresh Strava access token using stored refresh token.
+async def get_valid_token(db: AsyncSession, user_id: int) -> StravaTokenORM:
+    """Return a valid (non-expired) token for a user, refreshing if necessary.
 
-    Returns updated token payload on success, None on failure.
+    Applies a 5-minute safety window so tokens are refreshed *before* they
+    expire rather than at the exact expiry boundary.
+
+    Args:
+        db: Async database session
+        user_id: User primary key
+
+    Returns:
+        StravaTokenORM record with decrypted ``access_token`` attribute set
+        (the field is temporarily overwritten in-memory for caller convenience
+        — the encrypted value is still persisted in the DB).
+
+    Raises:
+        TokenRevokedError: If no token exists, or the refresh token is
+            missing/invalid, or Strava returns a non-200 on refresh.
     """
-    from httpx import AsyncClient, Timeout
-
     record = await strava_token_repository.get_by_user_id(db, user_id)
-    if not record or not record.refresh_token:
-        return None
+    if not record or not record.access_token:
+        raise TokenRevokedError("No Strava token found — user must reconnect")
 
+    now_utc = datetime.now(timezone.utc)
+    safety_window = timedelta(minutes=5)
+    needs_refresh = record.expires_at is None or record.expires_at <= now_utc + safety_window
+
+    if needs_refresh:
+        if not record.refresh_token:
+            raise TokenRevokedError("No refresh token available — user must reconnect")
+        try:
+            refreshed = await _do_refresh(db, user_id, record)
+            if refreshed is None:
+                raise StravaRefreshError("Strava token refresh returned no data")
+            record = await strava_token_repository.get_by_user_id(db, user_id)
+            if not record:
+                raise TokenRevokedError("Token record missing after refresh")
+        except StravaRefreshError:
+            await strava_token_repository.delete_by_user_id(db, user_id)
+            raise TokenRevokedError("Strava connection revoked — please reconnect")
+
+    # Decrypt access token in-memory for the caller
+    try:
+        record.access_token = decrypt_token(record.access_token)
+    except ValueError as exc:
+        raise TokenRevokedError("Token decryption failed — encryption key may have rotated") from exc
+
+    return record
+
+
+async def _do_refresh(db: AsyncSession, user_id: int, record: StravaTokenORM) -> Optional[Dict]:
+    """Internal: call Strava's refresh endpoint and persist new tokens.
+
+    Raises:
+        StravaRefreshError: On non-200 from Strava or network failure.
+    """
     try:
         decrypted_refresh = decrypt_token(record.refresh_token)
-    except ValueError:
-        return None
+    except ValueError as exc:
+        raise StravaRefreshError("Cannot decrypt refresh token") from exc
 
-    async with AsyncClient(timeout=Timeout(10.0)) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
         resp = await client.post(
             STRAVA_TOKEN_URL,
             data={
@@ -197,12 +256,26 @@ async def refresh_access_token(db: AsyncSession, user_id: int) -> Optional[Dict]
         )
 
     if resp.status_code != 200:
-        return None
+        raise StravaRefreshError(f"Strava refresh failed: HTTP {resp.status_code}")
 
     new_tokens = resp.json()
-    # Store refreshed tokens
     await store_tokens(db, user_id, new_tokens)
     return new_tokens
+
+
+async def refresh_access_token(db: AsyncSession, user_id: int) -> Optional[Dict]:
+    """Attempt to refresh Strava access token using stored refresh token.
+
+    Returns updated token payload on success, None on failure.
+    """
+    record = await strava_token_repository.get_by_user_id(db, user_id)
+    if not record or not record.refresh_token:
+        return None
+
+    try:
+        return await _do_refresh(db, user_id, record)
+    except StravaRefreshError:
+        return None
 
 
 async def revoke_and_delete(db: AsyncSession, user_id: int) -> bool:
@@ -215,17 +288,13 @@ async def revoke_and_delete(db: AsyncSession, user_id: int) -> bool:
     Returns:
         True if local record was deleted (Strava revocation is best-effort)
     """
-    from httpx import AsyncClient, Timeout
-
     record = await strava_token_repository.get_by_user_id(db, user_id)
-    if not record or not record.refresh_token:
-        pass  # Best-effort revocation below
 
     # Best-effort revoke with Strava (using access token)
     try:
-        decrypted_access = decrypt_token(record.access_token) if record else None
+        decrypted_access = decrypt_token(record.access_token) if record and record.access_token else None
         if decrypted_access:
-            async with AsyncClient(timeout=Timeout(10.0)) as client:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
                 await client.post(
                     "https://www.strava.com/oauth/revoke",
                     params={"access_token": decrypted_access},

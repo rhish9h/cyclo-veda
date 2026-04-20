@@ -9,6 +9,29 @@ All notable changes to the Cyclo Veda project will be documented in this file.
 - Enhanced dashboard functionality
 - API documentation improvements
 
+## [0.10.0] - 2026-04-20
+
+### Added (Phase 3: Token Management & API)
+
+**Backend**
+- Created `app/schemas/strava.py`: normalized Pydantic response schemas
+  - `StravaActivity` — stable subset of Strava's SummaryActivity (id, name, sport_type, distance, times, elevation, HR, power, polyline, etc.) with `from_strava()` classmethod for normalizing raw Strava payloads
+  - `StravaActivitiesResponse` — paginated envelope (activities, page, per_page, count)
+  - `StravaStatus` — connection status schema (moved from inline dict to typed model)
+- Added `StravaRefreshError` and `TokenRevokedError` custom exceptions to `app/services/strava_service.py`
+- Added `get_valid_token(db, user_id)` to `strava_service.py`: returns a `StravaTokenORM` with the `access_token` field decrypted in-memory; auto-refreshes if token is within the 5-minute safety window; raises `TokenRevokedError` if refresh fails (token deleted from DB, user must reconnect)
+- Extracted `_do_refresh()` as an internal helper used by both `get_valid_token()` and `refresh_access_token()`
+
+**Router updates (`app/routers/strava.py`)**
+- `GET /api/strava/activities`: rewritten — uses `get_current_user` + `get_valid_token()` (auto-refresh) instead of accepting a raw `Authorization` header; response normalized via `StravaActivitiesResponse` / `StravaActivity.from_strava()`
+- `GET /api/strava/user`: updated to use `get_current_user` + `get_valid_token()` pattern; raises HTTP 401 on `TokenRevokedError`
+- `GET /api/strava/status`: now uses typed `StravaStatus` response model
+- Removed dead `_extract_bearer_token` helper and `get_user_bearer_token` alias
+
+**Bug fixes**
+- Fixed `revoke_and_delete()` `AttributeError` when called for a user with no token record (guard added: `if record and record.access_token`)
+- Cleaned up `Literal` unused import and inline `from httpx import ...` imports inside service functions (moved to top-level)
+
 ## [0.9.0] - 2026-04-05
 
 ### Changed (Docker Compose restructure + cleanup)
