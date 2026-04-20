@@ -8,9 +8,11 @@ Naming convention:
 """
 
 from .base import Base
+from .strava_token import StravaTokenORM
 from .user import UserORM
 
 __all__ = [
     "Base",
+    "StravaTokenORM",
     "UserORM",
 ]

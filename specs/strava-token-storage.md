@@ -335,19 +335,17 @@ dependencies = [
 7. **Auth Migration**: Replace `fake_users_db` with database repository, maintain same API contract. JWT `sub` claim remains `email` — no change to token structure.
 8. **Create `.env.example` files**: Create `backend/.env.example` and root `.env.example` with all required placeholder variables (neither file currently exists).
 
-### Phase 2: Strava Token Storage (1.5 hours) ← **NEXT**
-1. **Pre-check — `User.id` type**: `app/schemas/user.py` currently declares `id: Optional[int]`. Change to `id: int` (non-optional) so Phase 2 code calling `current_user.id` is type-safe. `get_current_user` always fetches from the DB so `None` is never a valid runtime value.
-2. **Token Model**: Create `models/strava_token.py` with one-to-one constraints and encrypted fields
-3. **Register with Alembic**: Add `from app.models.strava_token import StravaTokenORM  # noqa: F401` to `migrations/env.py` (same pattern as `UserORM`). Then generate and apply the migration:
-   ```
-   alembic revision --autogenerate -m "create strava_tokens table"
-   alembic upgrade head
-   ```
-4. **Encryption**: Implement `utils/security.py` with Fernet encryption for access/refresh tokens only. **Fernet key format**: `STRAVA_ENCRYPTION_KEY` must be a URL-safe base64-encoded 32-byte key, not a raw string. Generate with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and document this in `.env.example`.
-5. **Repository Layer**: Create `repositories/strava_token_repository.py` with CRUD operations (async, using `AsyncSession`)
-6. **Service Layer**: Implement `services/strava_service.py` with token storage and refresh logic
-7. **Update `/connect` endpoint**: Change `GET /api/strava/connect` from returning `RedirectResponse(302)` to returning `{"auth_url": ...}` JSON and add `Depends(get_current_user)` (see API Changes section). This is a **breaking change** — coordinate the corresponding frontend update.
-8. **Storage Integration**: Update `/api/strava/callback` to validate the signed OAuth state (`security.verify_signed_data`) and store encrypted tokens via `strava_service.store_tokens(user_id, tokens)`.
+### ✅ Phase 2: Strava Token Storage (Complete)
+1. **Pre-check — `User.id` type**: `app/schemas/user.py` declares `id: int` (non-optional) ✅
+2. **Token Model**: `models/strava_token.py` created with one-to-one constraints, FK, and `strava_athlete_id` ✅
+3. **Alembic Migrations**: `ead4347b116f_create_strava_tokens_table.py` + `5216de56eb03_add_strava_athlete_id_column.py` generated and applied ✅
+4. **Encryption**: `utils/security.py` with Fernet encryption ✅
+5. **Repository Layer**: `repositories/strava_token_repository.py` with async CRUD ✅
+6. **Service Layer**: `services/strava_service.py` with token storage and refresh logic ✅
+7. **`/connect` endpoint**: Returns `{"auth_url": ...}` JSON with `Depends(get_current_user)` and signed state param ✅
+8. **Storage Integration**: `/api/strava/callback` no longer uses `get_current_user` — identifies user via signed state param, stores tokens + athlete_id ✅
+9. **State signing security**: HMAC key is server-side only (`_STATE_HMAC_KEY` from env), never embedded in the state payload. State format: `{user_id}:{timestamp}:{HMAC-SHA256(key, user_id:timestamp)}` ✅
+10. **Cleaned up**: Removed unused `decrypt_token`/`encrypt_token` imports from router; removed dead `generate_strava_auth_url()` code; `hmac`/`hashlib` at module level ✅
 
 ### Phase 3: Token Management & API (1.5 hours)
 1. **Token Refresh Logic**: Implement automatic refresh with 5-minute safety window

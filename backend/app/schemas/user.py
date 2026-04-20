@@ -88,7 +88,7 @@ class User(UserBase):
     - app.auth.dependencies (authentication functions)
     - app.routers.auth.get_current_user_info (API response)
     """
-    id: Optional[int] = Field(default=None, description="Database primary key")
+    id: int = Field(description="Database primary key")
     is_active: bool = Field(default=True)
     roles: List[str] = Field(default_factory=list)
 

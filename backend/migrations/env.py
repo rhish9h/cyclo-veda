@@ -29,6 +29,7 @@ if config.config_file_name is not None:
 # Import all ORM models so Alembic can autogenerate migrations.
 # Any model that inherits from Base will be included automatically.
 from app.models.base import Base
+from app.models.strava_token import StravaTokenORM  # noqa: F401
 from app.models.user import UserORM  # noqa: F401 — registers table with Base.metadata
 
 target_metadata = Base.metadata
