@@ -109,10 +109,6 @@ async def _exchange_code_for_tokens(code: str) -> dict[str, Any]:
     return tokens
 
 
-# Alias for Depends() syntax (must be defined before routes)
-get_user_bearer_token = _extract_bearer_token
-
-
 # --------------------------------------------------------------------------- #
 #  Routes                                                                     #
 # --------------------------------------------------------------------------- #

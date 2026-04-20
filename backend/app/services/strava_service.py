@@ -39,24 +39,6 @@ class TokenRevokedError(StravaServiceError):
     pass
 
 
-def generate_strava_auth_url() -> str:
-    """Generate the Strava OAuth authorization URL.
-
-    Returns:
-        Full authorization URL string ready for frontend redirect
-    """
-    scope = "activity:read_all"
-    redirect_uri = os.getenv("STRAVA_REDIRECT_URI", "http://localhost/api/strava/callback")
-    return (
-        f"https://www.strava.com/oauth/authorize?"
-        f"client_id={STRAVA_CLIENT_ID}"
-        f"&redirect_uri={redirect_uri}"
-        f"&response_type=code"
-        f"&scope={scope}"
-        f"&approval_prompt=force"
-    )
-
-
 async def store_tokens(
     db: AsyncSession,
     user_id: int,
