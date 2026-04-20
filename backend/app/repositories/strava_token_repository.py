@@ -4,7 +4,7 @@ Provides database-backed CRUD operations for StravaTokenORM records
 using async SQLAlchemy sessions.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import select
@@ -68,7 +68,6 @@ class StravaTokenRepository:
             record.expires_at = expires_at
             record.scope = scope
             record.strava_athlete_id = strava_athlete_id
-            record.updated_at = datetime.now(timezone.utc)
         else:
             record = StravaTokenORM(
                 user_id=user_id,
@@ -98,13 +97,9 @@ class StravaTokenRepository:
         """
         record = await StravaTokenRepository.get_by_user_id(db, user_id)
         if record:
-            del_record = StravaTokenORM
-            result = await db.execute(select(del_record).where(del_record.user_id == user_id))
-            existing = result.scalar_one_or_none()
-            if existing:
-                await db.delete(existing)
-                await db.commit()
-                return True
+            await db.delete(record)
+            await db.commit()
+            return True
         return False
 
 

@@ -121,9 +121,8 @@ async def _exchange_code_for_tokens(code: str) -> dict[str, Any]:
     return tokens
 
 
-# Aliases for Depends() syntax (must be defined before routes)
-get_user_bearer_token = _extract_bearer_token         # convenience alias
-exchange_code_for_tokens = _exchange_code_for_tokens  # convenience alias
+# Alias for Depends() syntax (must be defined before routes)
+get_user_bearer_token = _extract_bearer_token
 
 
 # --------------------------------------------------------------------------- #
@@ -139,11 +138,10 @@ async def connect_strava(user: User = Depends(get_current_user)):
     identify the user without a JWT (the browser callback has no auth header).
     """
     signed_state = _sign_state(user.id)
-    redirect_uri = os.getenv("STRAVA_REDIRECT_URI", "http://localhost/api/strava/callback")
     auth_url = (
         f"https://www.strava.com/oauth/authorize?"
         f"client_id={STRAVA_CLIENT_ID}&"
-        f"redirect_uri={redirect_uri}&"
+        f"redirect_uri={STRAVA_REDIRECT_URI}&"
         f"response_type=code&"
         f"scope=activity:read_all&"
         f"state={signed_state}&"
@@ -186,24 +184,9 @@ async def strava_callback(
         )
 
     # Exchange code for tokens
-    token_url = "https://www.strava.com/oauth/token"
-    data = {
-        "client_id": STRAVA_CLIENT_ID,
-        "client_secret": STRAVA_SECRET,
-        "code": code,
-        "grant_type": "authorization_code",
-    }
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        response = await client.post(token_url, data=data)
-
-    if response.status_code != 200:
-        return RedirectResponse(
-            url=f"{FRONTEND_URL}/settings?error=strava_token_exchange_failed&detail={response.text}",
-            status_code=302,
-        )
-
-    tokens: dict[str, Any] = response.json()
-    if "access_token" not in tokens:
+    try:
+        tokens = await _exchange_code_for_tokens(code)
+    except HTTPException:
         return RedirectResponse(
             url=f"{FRONTEND_URL}/settings?error=strava_token_exchange_failed",
             status_code=302,

@@ -5,7 +5,6 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/api/auth/login',
     ME: '/api/auth/me',
-    LOGOUT: '/api/auth/logout',
   },
 } as const;
 
@@ -20,7 +19,6 @@ export const ROUTES = {
 // Storage Keys
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',
-  USER_DATA: 'user_data',
 } as const;
 
 // DOM Elements

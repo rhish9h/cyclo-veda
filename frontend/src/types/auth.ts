@@ -39,20 +39,3 @@ export interface User {
   is_active: boolean;
 }
 
-/**
- * Authentication context interface
- * Defines the shape of the authentication context used throughout the app
- * This interface ensures consistent access to auth state and methods
- */
-export interface AuthContextType {
-  /** Current authenticated user (null if not authenticated) */
-  user: User | null;
-  /** Function to authenticate user with credentials */
-  login: (credentials: LoginCredentials) => Promise<void>;
-  /** Function to log out current user */
-  logout: () => void;
-  /** Loading state during authentication operations */
-  isLoading: boolean;
-  /** Whether user is currently authenticated */
-  isAuthenticated: boolean;
-}

@@ -106,7 +106,7 @@ class AuthService:
         )
 
     @staticmethod
-    async def authenticate_user(db: AsyncSession, email: str, password: str):
+    async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[User]:
         """Authenticate a user with email and password.
 
         Args:
@@ -115,14 +115,13 @@ class AuthService:
             password: The user's plaintext password
 
         Returns:
-            User: Pydantic User schema if authentication successful
-            False: If authentication fails (user not found or wrong password)
+            Optional[User]: Pydantic User schema if authentication successful, None otherwise
         """
         row = await user_repository.get_by_email(db, email)
         if row is None:
-            return False
+            return None
         if not AuthService.verify_password(password, row.hashed_password):
-            return False
+            return None
         return User(
             id=row.id,
             email=row.email,
