@@ -2,12 +2,7 @@
 # No named volumes: everything is destroyed on `docker compose down`.
 #
 # Usage:
-#   docker compose -f docker-compose.test.yml up \
-#     --build \
-#     --exit-code-from test-runner \
-#     --abort-on-container-exit \
-#     --renew-anon-volumes \
-#     --remove-orphans
+#   docker compose -f docker-compose.test.yml up --build --exit-code-from test-runner --renew-anon-volumes --remove-orphans
 #
 # Exit code mirrors pytest: 0 = all pass, non-zero = failure.
 
@@ -27,23 +22,6 @@ services:
     networks:
       - test-network
 
-  migrate-test:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: test
-      secrets:
-        - env_test
-    command: alembic upgrade head
-    env_file:
-      - ./backend/.env.test
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - test-network
-    restart: "no"
-
   test-runner:
     build:
       context: ./backend
@@ -51,12 +29,17 @@ services:
       target: test
       secrets:
         - env_test
-    command: pytest tests/ -v --tb=short -p no:cov
+    # Run migrations then the full test suite in a single container so nothing
+    # else exits mid-session (which would trigger --exit-code-from's implicit
+    # --abort-on-container-exit and/or reshuffle the Docker network DNS).
+    command: sh -c "alembic upgrade head && pytest tests/ --override-ini='addopts=' -v --tb=short -p no:cov"
     env_file:
       - ./backend/.env.test
+    environment:
+      DATABASE_URL: postgresql+asyncpg://test:test@postgres:5432/cycloveda_test
     depends_on:
-      migrate-test:
-        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     networks:
       - test-network
     restart: "no"

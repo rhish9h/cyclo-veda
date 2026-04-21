@@ -15,7 +15,21 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.repositories.strava_token_repository import strava_token_repository
-from app.services.strava_service import store_tokens
+from app.services.strava_service import store_tokens as _store_tokens
+
+
+async def store_tokens(db, user_id: int, raw_tokens: dict):
+    """Write tokens via the real service, then expire the session cache.
+
+    store_tokens mutates the returned record's access_token to plaintext for
+    caller convenience. If the same session is later used to fetch the record
+    (via SQLAlchemy's identity map), the endpoint would see plaintext instead
+    of the encrypted DB value and fail to decrypt. Expiring all objects forces
+    the next query to re-read from the DB.
+    """
+    result = await _store_tokens(db, user_id, raw_tokens)
+    db.expire_all()
+    return result
 
 
 # ---------------------------------------------------------------------------

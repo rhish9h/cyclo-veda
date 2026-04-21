@@ -32,7 +32,7 @@ COPY . .
 # Load test env vars from .env.test (mounted as build secret or copied below)
 # Unit tests mock all DB/external calls — no live services needed at build time.
 RUN --mount=type=secret,id=env_test,target=/app/.env \
-    pytest tests/unit -p no:cov -q
+    pytest tests/unit --override-ini="addopts=" -p no:cov -q
 
 # =============================================================================
 # Stage 3: runtime — production image, inherits from deps (not test)
