@@ -66,17 +66,37 @@
 
 ## Testing
 
-### Backend Tests
+### Unit Tests (no DB required)
+
+Unit tests run automatically as part of the Docker build. The `test` stage in `backend/Dockerfile` runs `pytest tests/unit` — if any test fails, the build fails. The `runtime` stage inherits from `deps` (not `test`), so a prod build does **not** run tests.
+
+Run locally:
+
 ```bash
-# Run all tests
-pytest
+# All unit tests
+pytest tests/unit --override-ini="addopts=" -p no:cov -q
 
-# Run with coverage
-pytest --cov=app --cov-report=term-missing
+# Specific file
+pytest tests/unit/test_services/test_strava_service.py -p no:cov -q
 
-# Run specific test file
-pytest tests/unit/test_services/test_auth_service.py
+# With coverage (local only — requires pytest-cov)
+pytest tests/unit --cov=app --cov-report=term-missing
 ```
+
+### Integration Tests (requires PostgreSQL)
+
+Integration tests use a real ephemeral PostgreSQL database. Run via Docker Compose:
+
+```bash
+docker compose -f docker-compose.test.yml up --build \
+  --exit-code-from test-runner \
+  --renew-anon-volumes \
+  --remove-orphans
+```
+
+- Migrations (`alembic upgrade head`) run automatically inside the `test-runner` container before pytest.
+- Only outbound HTTP calls to Strava are mocked; all DB, encryption, and routing is exercised for real.
+- Exit code mirrors pytest: `0` = all pass, non-zero = failure.
 
 ### Frontend Tests
 ```bash
