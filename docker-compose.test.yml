@@ -1,0 +1,70 @@
+# Test compose — spins up an ephemeral postgres, runs migrations, then the full test suite.
+# No named volumes: everything is destroyed on `docker compose down`.
+#
+# Usage:
+#   docker compose -f docker-compose.test.yml up \
+#     --build \
+#     --exit-code-from test-runner \
+#     --abort-on-container-exit \
+#     --renew-anon-volumes \
+#     --remove-orphans
+#
+# Exit code mirrors pytest: 0 = all pass, non-zero = failure.
+
+services:
+  postgres:
+    image: postgres:18.3
+    environment:
+      POSTGRES_DB: cycloveda_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d cycloveda_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - test-network
+
+  migrate-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: test
+      secrets:
+        - env_test
+    command: alembic upgrade head
+    env_file:
+      - ./backend/.env.test
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - test-network
+    restart: "no"
+
+  test-runner:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: test
+      secrets:
+        - env_test
+    command: pytest tests/ -v --tb=short -p no:cov
+    env_file:
+      - ./backend/.env.test
+    depends_on:
+      migrate-test:
+        condition: service_completed_successfully
+    networks:
+      - test-network
+    restart: "no"
+
+networks:
+  test-network:
+    driver: bridge
+
+secrets:
+  env_test:
+    file: ./backend/.env.test

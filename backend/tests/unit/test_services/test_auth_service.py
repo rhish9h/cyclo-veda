@@ -138,7 +138,7 @@ class TestUserOperations:
         with patch('app.repositories.user_repository.UserRepository.get_by_email', new=AsyncMock(return_value=row)):
             user = await AuthService.authenticate_user(mock_db, "admin@cycloveda.com", "wrongpassword")
 
-        assert user is False
+        assert user is None
 
     async def test_authenticate_user_nonexistent_user(self):
         """Test user authentication with non-existent user"""
@@ -146,7 +146,7 @@ class TestUserOperations:
         with patch('app.repositories.user_repository.UserRepository.get_by_email', new=AsyncMock(return_value=None)):
             user = await AuthService.authenticate_user(mock_db, "nonexistent@example.com", "password")
 
-        assert user is False
+        assert user is None
 
     async def test_authenticate_user_inactive_user(self):
         """Test that authenticate_user returns the user regardless of is_active (service does not check).
@@ -288,7 +288,7 @@ class TestEdgeCasesAndErrorHandling:
             user = await AuthService.authenticate_user(mock_db, "ADMIN@CYCLOVEDA.COM", "password")
 
         # Should fail because email case doesn't match
-        assert user is False
+        assert user is None
     
     @patch('app.services.auth_service.jwt.encode')
     def test_create_access_token_jwt_error(self, mock_jwt_encode):

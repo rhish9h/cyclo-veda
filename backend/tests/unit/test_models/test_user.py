@@ -180,6 +180,7 @@ class TestUser:
     def test_valid_user(self):
         """Test creating User with valid data"""
         user_data = {
+            "id": 1,
             "email": "test@example.com",
             "username": "testuser",
             "is_active": True,
@@ -195,6 +196,7 @@ class TestUser:
     def test_user_default_values(self):
         """Test default values for User model"""
         user_data = {
+            "id": 1,
             "email": "test@example.com",
             "username": "testuser"
         }
@@ -206,6 +208,7 @@ class TestUser:
     def test_user_safe_serialization(self):
         """Test that User model only contains safe fields"""
         user_data = {
+            "id": 1,
             "email": "test@example.com",
             "username": "testuser",
             "is_active": True,
@@ -252,6 +255,7 @@ class TestEdgeCases:
     def test_empty_roles_list(self):
         """Test handling of empty roles list"""
         user_data = {
+            "id": 1,
             "email": "test@example.com",
             "username": "testuser",
             "roles": []
@@ -263,6 +267,7 @@ class TestEdgeCases:
         """Test handling of large roles list"""
         large_roles = [f"role_{i}" for i in range(100)]
         user_data = {
+            "id": 1,
             "email": "test@example.com",
             "username": "testuser",
             "roles": large_roles

@@ -21,6 +21,7 @@ from unittest.mock import AsyncMock, Mock, MagicMock, patch
 import os
 from datetime import datetime, timedelta
 import jwt
+import app.utils.security as _security_module
 
 # Import your app components
 from app.main import app
@@ -279,6 +280,19 @@ def invalid_login_data():
         "email": "invalid@example.com",
         "password": "wrongpassword"
     }
+
+
+@pytest.fixture(autouse=True)
+def reset_fernet_singleton():
+    """Reset the module-level Fernet cache before each test.
+
+    security.py caches the Fernet instance after first use. Without this
+    fixture, whichever test runs first locks in the key for the entire session,
+    causing failures if STRAVA_ENCRYPTION_KEY is loaded late or changes.
+    """
+    _security_module._fernet_instance = None
+    yield
+    _security_module._fernet_instance = None
 
 
 # Pytest configuration
