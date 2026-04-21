@@ -42,6 +42,7 @@ FROM deps AS runtime
 
 COPY app/ ./app/
 COPY migrations/ ./migrations/
+COPY scripts/ ./scripts/
 COPY alembic.ini ./
 
 RUN useradd --create-home --shell /bin/bash app && \

@@ -4,8 +4,8 @@
 
 ### Backend
 - Python 3.13+
-- Poetry (for dependency management)
-- PostgreSQL (for production, SQLite for development)
+- pip with pyproject.toml (setuptools backend)
+- PostgreSQL (via Docker in dev, or a local PostgreSQL instance)
 
 ### Frontend
 - Node.js 18+
@@ -13,7 +13,45 @@
 
 ## Getting Started
 
-### Backend Setup
+### Docker Development (Recommended)
+
+The project uses Docker Compose for development with PostgreSQL, Traefik reverse proxy, and proper service ordering.
+
+**Prerequisites:**
+- Docker Desktop (or Docker Engine with Docker Compose)
+- Local hostname setup (optional, for nicer URLs)
+
+**Quick Start:**
+```bash
+# Copy environment files
+cp .env.example .env
+cp backend/.env.example backend/.env
+
+# Start all services (seeding happens automatically)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+**Access the application:**
+- Frontend: http://cycloveda.local (or http://localhost:5173 if running locally)
+- Backend API: http://api.cycloveda.local
+- Traefik Dashboard: http://localhost:8080
+
+**Development credentials:**
+- Email: `admin@cycloveda.com` | Password: `password`
+- Email: `user@example.com` | Password: `password`
+
+**Service architecture:**
+The Docker Compose setup follows best practices with proper service ordering:
+1. **postgres** - PostgreSQL database with health checks
+2. **migrate** - Alembic schema migrations (runs once, exits)
+3. **seed** - Development data seeding (runs automatically after migrations, idempotent)
+4. **backend** - FastAPI application (depends on migrations and seed completing)
+5. **traefik** - Reverse proxy with automatic service discovery
+
+**Seeding:**
+The seed service runs automatically on `docker compose up` and uses find-or-create logic, so it's idempotent (safe to run multiple times). Users are only created if they don't already exist.
+
+### Local Development (Backend)
 
 1. **Clone the repository**
    ```bash
@@ -21,10 +59,8 @@
    cd cyclo-veda/backend
    ```
 
-2. **Set up Python environment**
+2. **Install dependencies**
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # Windows: .\venv\Scripts\activate
    pip install -e ".[dev]"
    ```
 
@@ -36,13 +72,23 @@
    ALGORITHM=HS256
    ACCESS_TOKEN_EXPIRE_MINUTES=30
    
-   # Database (SQLite for development)
-   DATABASE_URL=sqlite:///./sql_app.db
+   # Database (PostgreSQL for development)
+   DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/cyclo_veda_dev
    ```
 
-4. **Start the server**
+4. **Run migrations**
    ```bash
-   uvicorn main:app --reload
+   alembic upgrade head
+   ```
+
+5. **Seed development users**
+   ```bash
+   python scripts/seed_dev_users.py
+   ```
+
+6. **Start the server**
+   ```bash
+   uvicorn app.main:app --reload
    ```
 
 ### Frontend Setup
