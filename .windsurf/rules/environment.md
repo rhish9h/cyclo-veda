@@ -1,15 +1,11 @@
 ---
 trigger: model_decision
-description: If the project is written in Python
+description: Apply when running local Python scripts or debugging outside Docker. This project runs backend and tests inside Docker — do NOT create a venv for running the server, tests, or migrations.
 ---
 
-### 🛠️ Coding Environment Rule
+## Runtime Environment
 
-- If the project is written in **Python**, always create and activate a virtual environment named `venv` before running **any** server, scripts, or tests.
-  - Example:
-    ```bash
-    python -m venv venv
-    source venv/bin/activate
-    ```
-- Never run the project against the **global Python environment**.
-- Assume the `venv` folder is part of the standard project structure and should be recreated if missing.
+- This project runs **entirely inside Docker**. Do not create or activate a `venv` to run the server, tests, or migrations.
+- The correct way to run tests is via Docker Compose (see `docker-compose.test.yml`).
+- Only create a `venv` if explicitly running a one-off local Python utility script outside Docker.
+- Never run backend code against the global Python environment.

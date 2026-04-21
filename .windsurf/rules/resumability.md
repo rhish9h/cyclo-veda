@@ -2,60 +2,32 @@
 trigger: always_on
 ---
 
-# 🧠 Resumability Guidelines
+## Resumability
 
-**Goal**: Ensure that this project can be resumed after long gaps (weeks or months) *without requiring prior context or re-reading the entire codebase*.
+Goal: this project must be resumable after weeks or months with zero prior context.
 
----
+### After every non-trivial change, update docs
 
-## ✅ General Rule
+- `documentation/adr/` — why a decision was made, what alternatives were considered, tradeoffs
+- `documentation/changelog/` — what changed, one line per item
+- `documentation/docs/` — how-to guides and technical references
 
-- Assume Future You (or any engineer) has **zero context**.
-- For every non-trivial change, update the documentation with **context and rationale**.
+### ADR rules
 
----
+- Filename format: `YYYY-MM-DD-short-description.md`
+- Body must include a `**Date:**` field
+- Answer: what problem, why this solution, what alternatives, what's next
 
-## 📁 Documentation Structure
+### Changelog rules
 
-| Folder | Purpose |
-|-------|---------------------------------------------|
-| `documentation/adr/` | Architectural decisions and rationale (**include a date in each ADR**) |
-| `documentation/changelog/` | Chronological list of meaningful changes |
-| `documentation/docs/` | General technical/usage docs and guides |
+- One line per change, prefixed with `Added:`, `Changed:`, `Fixed:`, `Removed:`, or `Note:`
+- No `###` subheadings inside a version block
+- No implementation details — those belong in ADRs
+- Bad: "Refactored the token service to use a new internal helper that calls the refresh endpoint"
+- Good: "Changed: token auto-refresh now uses a 5-minute safety window"
 
-> 💡 ADR filenames should start with the date, and the ADR body should include a `**Date:**` field for clarity, e.g.  
-> `2025-08-18-use-authlib-for-oidc.md`
+### General
 
----
-
-## 🔧 For Every Feature or Refactor
-
-Before finishing a task, answer the following:
-
-- What problem is being solved?
-- Why was this solution chosen?
-- What alternatives/tradeoffs were considered?
-- What could be improved in the future?
-
-➡ Add these answers to the appropriate documentation location (`adr`, `changelog`, or `docs`).
-
----
-
-## 🚨 Examples
-
-| ✅ Good | ❌ Bad |
-|------------------|----------------|
-| “Use AuthLib to replace custom OIDC validator (simplifies token handling).” | “Refactored API” |
-| `[2025-08-18] Added retry logic for external API to handle intermittent failures.` | “Fixed bug” |
-
----
-
-## 💡 Tips
-
-- Keep **README** up to date with links to relevant documentation.
-- If stopping mid-feature, add a `docs/resume-guide.md` that describes partial progress.
-- Use TODO comments **with reasons** (e.g., `# TODO: add caching – requests ~600ms`).
-
----
-
-*“Write as if future you is a new hire.”*
+- Keep README up to date with links to docs
+- Use TODO comments with reasons: `# TODO: add caching — currently ~600ms per request`
+- If stopping mid-feature, add a note in `documentation/docs/` describing partial progress
