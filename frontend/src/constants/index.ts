@@ -6,6 +6,9 @@ export const API_ENDPOINTS = {
     LOGIN: '/api/auth/login',
     ME: '/api/auth/me',
   },
+  STRAVA: {
+    CONNECT: '/api/strava/connect',
+  },
 } as const;
 
 // Application Routes
