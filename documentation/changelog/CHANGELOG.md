@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 - Upcoming: advanced user management, enhanced dashboard
+- Added: backend debugging support via debugpy dev stage and VS Code remote attach
 
 ---
 

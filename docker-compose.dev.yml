@@ -37,6 +37,8 @@ services:
 
   backend:
     container_name: cyclo-veda-backend-dev
+    build:
+      target: dev
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,6 +46,8 @@ services:
         condition: service_completed_successfully
       seed:
         condition: service_completed_successfully
+    ports:
+      - "5678:5678"  # Debugpy port for remote debugging
     volumes:
       - ./backend:/app  # Hot reload — uvicorn picks up code changes instantly
     labels:

@@ -35,6 +35,25 @@ RUN --mount=type=secret,id=env_test,target=/app/.env \
     pytest tests/unit --override-ini="addopts=" -p no:cov -q
 
 # =============================================================================
+# Stage 2.5: dev — development image with debugpy and hot reload
+# Inherits from deps, installs dev dependencies, sets up debugging
+# =============================================================================
+FROM deps AS dev
+
+RUN pip install --no-cache-dir -e ".[dev]"
+
+COPY . .
+
+RUN useradd --create-home --shell /bin/bash app && \
+    chown -R app:app /app
+USER app
+
+EXPOSE 8000 5678
+
+# Start with debugpy listener, wait for debugger attachment, then run uvicorn with reload
+CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# =============================================================================
 # Stage 3: runtime — production image, inherits from deps (not test)
 # No test dependencies, no test files in the final image.
 # =============================================================================

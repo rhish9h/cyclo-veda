@@ -69,6 +69,7 @@ dev = [
     # Moved pre-commit from test to dev, removed jupyter (too heavy), removed watchdog (not essential)
     "pre-commit>=4.0.0",
     "ipython>=8.30.0",
+    "debugpy>=1.8.2",  # Remote debugging support
 ]
 
 [project.urls]
