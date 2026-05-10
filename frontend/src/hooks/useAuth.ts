@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import authService from '../services/authService';
 import { ROUTES } from '../constants';
 import { errorHandler } from '../utils/errorHandler';

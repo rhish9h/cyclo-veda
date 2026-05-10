@@ -15,7 +15,7 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
 import type { LoginCredentials } from '../../types/auth';
 import styles from './Login.module.css';
@@ -117,7 +117,11 @@ const Login: React.FC = () => {
           {error && <div className={styles.errorMessage}>{error}</div>}
 
           {/* Submit button with loading state */}
-          <button type='submit' className={styles.loginButton} disabled={isLoading}>
+          <button
+            type='submit'
+            className={styles.loginButton}
+            disabled={isLoading}
+          >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>

@@ -2,7 +2,7 @@
 
 > Modern FastAPI backend with JWT authentication, comprehensive testing, and Docker-ready deployment.
 
-[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.116+-green.svg)](https://fastapi.tiangolo.com/)
 [![pytest](https://img.shields.io/badge/pytest-8.3+-red.svg)](https://pytest.org/)
 
@@ -48,46 +48,55 @@ python -m pytest --cov-report=html
 
 ## 🔧 Environment Setup
 
-Create `.env` file:
-
-```env
-# Required
-SECRET_KEY=your-secret-key-change-in-production
-
-# Optional (defaults provided)
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+```bash
+cp .env.example .env
+# Fill in: SECRET_KEY, DATABASE_URL, STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET
 ```
+
+See `.env.example` for all required variables and descriptions.
 
 ## 📁 Project Structure
 
 ```
 backend/
 ├── app/
-│   ├── auth/           # Authentication middleware
-│   ├── models/         # Pydantic models
-│   ├── routers/        # API endpoints
-│   └── services/       # Business logic
+│   ├── auth/             # Authentication dependencies (get_current_user)
+│   ├── models/           # SQLAlchemy ORM models (database tables)
+│   ├── schemas/          # Pydantic schemas (request/response validation)
+│   ├── repositories/     # Database access layer (UserRepository)
+│   ├── routers/          # API endpoints (auth, health, strava)
+│   ├── services/         # Business logic (AuthService)
+│   └── database.py       # SQLAlchemy engine + get_db dependency
+├── migrations/           # Alembic migration scripts
+│   └── versions/         # Individual migration files
 ├── tests/
-│   ├── unit/           # Unit tests
-│   └── integration/    # Integration tests
-├── main.py             # Application entry point
-├── pyproject.toml      # Dependencies & configuration
-└── README.md           # This file
+│   ├── unit/             # Unit tests (no live DB required)
+│   └── integration/      # Integration tests
+├── alembic.ini           # Alembic configuration
+├── main.py               # Application entry point
+├── pyproject.toml        # Dependencies & configuration
+└── README.md             # This file
 ```
 
 ## 🔐 Authentication
 
-**Test Credentials:**
-- Email: `admin@cycloveda.com` / Password: `password`
-- Email: `user@example.com` / Password: `password`
+JWT Bearer token authentication. Login via `POST /api/auth/login` to receive a token, then pass it as `Authorization: Bearer <token>` on subsequent requests.
 
-## 🐳 Docker Deployment
+Test users are seeded via the `fake_users_db` scaffold — replace with real user registration when implementing the registration endpoint.
 
-```dockerfile
-FROM python:3.13-slim
-COPY pyproject.toml .
-RUN pip install .  # Production dependencies only
+## 🐳 Docker
+
+Migrations run automatically via the `migrate` init container before the backend starts:
+
+```bash
+# Dev (source-mounted, hot reload)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+# Run migrations manually if needed
+docker exec cyclo-veda-backend-dev alembic upgrade head
+
+# Check current migration
+docker exec cyclo-veda-backend-dev alembic current
 ```
 
 ## 🤝 Contributing

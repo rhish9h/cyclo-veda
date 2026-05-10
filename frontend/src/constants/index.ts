@@ -5,7 +5,11 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/api/auth/login',
     ME: '/api/auth/me',
-    LOGOUT: '/api/auth/logout',
+  },
+  STRAVA: {
+    CONNECT: '/api/strava/connect',
+    STATUS: '/api/strava/status',
+    DISCONNECT: '/api/strava/disconnect',
   },
 } as const;
 
@@ -14,13 +18,12 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
-  SETTINGS: '/settings'
+  SETTINGS: '/settings',
 } as const;
 
 // Storage Keys
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',
-  USER_DATA: 'user_data',
 } as const;
 
 // DOM Elements

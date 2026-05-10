@@ -1,0 +1,48 @@
+# Production overrides — apply on top of docker-compose.yml:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# What this file changes vs the base:
+#   - traefik: read-only docker.sock, production container name
+#   - backend: production container name (no source mount)
+#   - migrate: production container name
+#   - frontend: included and built (not run locally in prod)
+
+services:
+  migrate:
+    container_name: cyclo-veda-migrate
+
+  backend:
+    container_name: cyclo-veda-backend
+
+  traefik:
+    container_name: cyclo-veda-traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Read-only in production
+      - ./traefik-data:/data
+
+  # Frontend is built and served via Nginx in production.
+  # In dev, run it locally with `npm run dev` instead.
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://api.cycloveda.local
+    container_name: cyclo-veda-frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`cycloveda.local`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+    networks:
+      - cyclo-veda
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - backend

@@ -1,6 +1,6 @@
 /**
  * Layout Component
- * 
+ *
  * Main layout wrapper for all authenticated pages.
  * Provides consistent structure with header, sidebar, content area, and footer.
  */
@@ -28,29 +28,25 @@ const Layout: React.FC<LayoutProps> = ({
   title = 'Cyclo Veda',
   showHeader = true,
   showFooter = true,
-  headerProps = {}
+  headerProps = {},
 }) => {
-
   return (
     <div className={styles.layoutContainer}>
       {/* Header */}
       {showHeader && (
-        <Header 
+        <Header
           title={title}
           showSettings={headerProps.showSettings}
           showLogout={headerProps.showLogout}
         />
       )}
-      
+
       {/* Main content area */}
       <div className={styles.layoutMain}>
-        
         {/* Page content */}
-        <main className={`${styles.layoutContent}`}>
-          {children}
-        </main>
+        <main className={`${styles.layoutContent}`}>{children}</main>
       </div>
-      
+
       {/* Footer */}
       {showFooter && <Footer />}
     </div>

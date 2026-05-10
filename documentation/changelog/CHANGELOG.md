@@ -1,179 +1,117 @@
 # Changelog
 
-All notable changes to the Cyclo Veda project will be documented in this file.
+All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Under Development
-- Advanced user management features
-- Enhanced dashboard functionality
-- API documentation improvements
+- Upcoming: advanced user management, enhanced dashboard
 
-## [0.6.0] - 2025-11-29
+---
 
-### Added
-- **Strava Integration (Backend)**:
-  - Implemented OAuth 2.0 Authorization Code flow integration with Strava
-  - Added `app/routers/strava.py` to handle authentication (`/api/strava/connect`) and callback (`/api/strava/callback`)
-  - Added `httpx` for asynchronous HTTP requests to Strava API
-  - Registered Strava router in `main.py` with `/api/strava` prefix
-- **Dependencies**:
-  - Added `httpx>=0.28.0` for async API client capabilities
-  - Added `email-validator` for robust email validation in Pydantic models
+## [0.12.0] - 2026-05-10 — Strava Status Fix
 
-### Changed
-- **Backend Dependencies**:
-  - Optimized production dependencies: removed `python-multipart` and `uvicorn[standard]`
-  - Updated `passlib` and `bcrypt` configuration to avoid version conflicts
-  - Moved `pre-commit` to dev dependencies
-- **Documentation**:
-  - Added ADR for Strava Integration Strategy (`2025-11-29-strava-integration-strategy.md`)
+- Added: frontend stravaService for Strava API calls (getStatus, connect, disconnect)
+- Fixed: Strava connection status now fetched from backend on mount instead of hardcoded
+- Changed: ConnectionCard delegates to parent handlers for connect/disconnect
 
-### Under Development
-- Advanced user management features
-- Enhanced dashboard functionality
-- API documentation improvements
+---
 
-## [0.5.0] - 2025-11-23
+## [0.11.0] - 2026-04-21 — Phase 4: True Integration Tests
 
-### Added
-- Complete Settings management system with multi-section interface:
-  - Profile information management (name, email, phone)
-  - Security settings (password change functionality)
-  - App preferences (theme, language, timezone selection)
-  - Notification preferences (email, push, marketing toggles)
-  - Third-party service connections section
-- ConnectionCard component for managing external integrations:
-  - Reusable component design for third-party services
-  - Connection status display and management
-  - Prepared for Strava integration with sync activities toggle
-- Enhanced Layout system with improved component architecture:
-  - Configurable header/footer display via props
-  - Dedicated Header, Footer, and Sidebar subcomponents
-  - Flexible layout customization for different page types
-- Complete CSS Modules implementation across all components:
-  - Full migration from traditional CSS to CSS Modules
-  - Scoped styling preventing class name conflicts
-  - TypeScript integration with CSS module imports
-  - camelCase class naming convention for consistency
-- Improved component composition patterns:
-  - Better separation of concerns in layout components
-  - Reusable component architecture for settings management
-  - Enhanced form handling with TypeScript interfaces
+- Changed: replaced mocked Strava integration tests with real end-to-end tests against an ephemeral PostgreSQL DB
+- Changed: merged `alembic upgrade head` into `test-runner` (removed separate `migrate-test` container) to fix Docker DNS instability
+- Changed: per-test isolation via SAVEPOINT rollback; only outbound Strava HTTP calls are mocked
 
-### Changed
-- Settings page now uses comprehensive state management with typed interfaces
-- All styling converted to CSS Modules for better maintainability
-- Layout component enhanced with prop-based customization
-- Component structure improved with better directory organization
+---
 
-### Infrastructure
-- Frontend components now fully utilize CSS Modules architecture
-- Settings system ready for backend API integration
-- ConnectionCard component prepared for multiple third-party service integrations
-- Enhanced Layout system supporting varied page layouts
+## [0.10.0] - 2026-04-20 — Phase 3: Token Management & API
 
-## [0.4.0] - 2025-09-20
+- Added: `StravaActivity`, `StravaActivitiesResponse`, `StravaStatus` Pydantic schemas
+- Added: `get_valid_token()` — decrypts token, auto-refreshes within 5-minute safety window, raises `TokenRevokedError` on failure
+- Changed: `/api/strava/activities` and `/api/strava/user` now authenticate via `get_current_user` + `get_valid_token()` instead of raw `Authorization` header
+- Fixed: `revoke_and_delete()` crash when user has no token record
+- Removed: dead `_extract_bearer_token` helper and `get_user_bearer_token` alias
 
-### Added
-- Complete Docker containerization with multi-stage builds
-- Traefik reverse proxy for service routing and load balancing
-- Docker Compose configuration with production-ready setup
-- Dedicated `/health` endpoint for proper health monitoring
-- Health router: Moved health endpoints from `main.py` to dedicated `app/routers/health.py` for better code organization
-- Comprehensive Docker documentation and deployment guide
-- Environment configuration with `.env.example`
-- Manual hostname setup instructions for Mac and Windows
-- Security hardening in Docker containers (non-root users)
-- CORS configuration for Docker hostnames
-- Content Security Policy (CSP) configuration in Nginx
+---
 
-### Changed
-- Backend uses Python 3.9+ compatible Docker image (supports 3.9-3.13)
-- Health checks now use curl with dedicated `/health` endpoint instead of Python requests
-- Backend CORS origins updated to include Docker hostnames
-- Frontend configured to work with containerized backend API
-- Removed automated hostname setup script in favor of manual instructions
-- Centralized CORS handling at Traefik reverse proxy level for better performance and consistency
-- Removed FastAPI CORS middleware to avoid conflicts with Traefik CORS configuration
+## [0.9.0] - 2026-04-05 — Docker Compose Restructure
 
-### Fixed
-- Frontend Docker build now installs all dependencies (including devDependencies) needed for TypeScript compilation
-- Frontend now correctly uses `api.cycloveda.local` for API calls in Docker environment via build-time configuration
-- Content Security Policy to allow API connections from frontend
-- CORS headers in Traefik to properly handle preflight requests
+- Changed: split monolithic `docker-compose-dev.yml` into `docker-compose.yml` (base), `.dev.yml`, and `.prod.yml`
+- Added: `migrate` init container; backend now waits for migrations to complete before starting
+- Removed: dead `UserInDB` and `UserResponse` Pydantic schemas
+- Changed: `app/database.py` now fails fast with a clear error if `DATABASE_URL` is unset
+- Fixed: frontend Docker build failure due to `eslint-plugin-react-hooks@5.x` / ESLint 10 peer dep conflict
 
-### Removed  
-- `setup-hosts.sh` script (replaced with manual setup instructions)
+---
 
-### Infrastructure
-- Frontend: React app served by Nginx on `cycloveda.local`
-- Backend: FastAPI application on `api.cycloveda.local`
-- Reverse Proxy: Traefik v3.0 with automatic service discovery
-- Network: Custom Docker network for service isolation
+## [0.8.0] - 2026-04-05 — Phase 1: Database Foundation
 
-## [0.3.0] - 2025-08-18
+- Added: SQLAlchemy 2.0 async engine, `get_db` dependency, `UserORM` model, `UserRepository`, Alembic migrations
+- Changed: Pydantic schemas moved from `app/models/` → `app/schemas/`; ORM models now exclusively in `app/models/`
+- Changed: auth service wired to real DB session; `fake_users_db` removed
 
-### Added
-- Login interface CSS improvements and visual enhancements
-- Enhanced UI/UX with better styling and user experience
-- Comprehensive project documentation framework
-- ADR (Architectural Decision Records) system
-- JWT Authentication ADR
-- API reference documentation
-- Architecture documentation
-- Authentication guide
-- Development guide
+---
 
-### Changed
-- Refined login page styling for better visual appeal
-- Enhanced CSS organization and maintainability
-- Improved documentation structure and organization
+## [0.7.0] - 2026-04-05 — Phase 0: Dependency & Runtime Upgrades
 
-## [0.2.0] - 2025-07-26
+- Changed: Python 3.13 → 3.14, PostgreSQL 17 → 18
+- Changed: `passlib`+`bcrypt<4` → `pwdlib[bcrypt]`; `python-jose` (CVEs) → `PyJWT>=2.8.0`
+- Changed: frontend — `react-router@7`, Vite 8, TypeScript 6, React 19
+- Fixed: deprecated `datetime.utcnow()` replaced with `datetime.now(timezone.utc)` throughout
+- Note: PG17 data volumes must be wiped before starting PG18
 
-### Added
-- Complete React + TypeScript frontend application
-- FastAPI backend with clean architecture
-- JWT-based authentication system with secure token handling
-- Comprehensive pytest testing framework:
-  - Unit tests for authentication services and user models
-  - Integration tests for API endpoints
-  - 98%+ test coverage with coverage reporting
-- Case-sensitive email authentication for enhanced security
-- Advanced error handling and validation systems
-- Production-ready development tooling:
-  - Backend: Black, isort, flake8, mypy configuration
-  - Frontend: ESLint, Prettier, TypeScript strict mode
-- Component-based architecture:
-  - Authentication components (Login, ProtectedRoute, PublicRoute)
-  - Layout components (Dashboard)
-  - Error boundary implementation
-- Utility systems:
-  - Centralized constants for API endpoints and configuration
-  - Storage, validation, and async utility functions
-  - Type-safe configuration management
+---
 
-### Changed
-- Implemented clean architecture patterns in backend
-- Enhanced security with proper password hashing and token validation
-- Improved project structure with separation of concerns
+## [0.6.0] - 2025-11-29 — Strava OAuth Integration
 
-### Fixed
-- Authentication flow edge cases
-- Password hashing compatibility issues
-- Token validation security improvements
+- Added: Strava OAuth 2.0 Authorization Code flow (`/api/strava/connect`, `/api/strava/callback`)
+- Added: `httpx` for async HTTP to Strava API; `email-validator` dependency
 
-## [0.1.0] - 2025-07-19
+---
 
-### Added
-- Initial project boilerplate and structure
-- Basic FastAPI setup
-- Initial React application scaffolding
-- Git repository initialization
-- Basic project configuration
+## [0.5.0] - 2025-11-23 — Settings UI & CSS Modules
 
-[Unreleased]: https://github.com/rhish9h/cyclo-veda/compare/v0.6.0...HEAD
+- Added: Settings page (profile, security, preferences, notifications, third-party connections)
+- Added: `ConnectionCard` component for external service integrations
+- Added: configurable `Layout` with `Header`, `Footer`, `Sidebar` subcomponents
+- Changed: full CSS Modules migration across all frontend components
+
+---
+
+## [0.4.0] - 2025-09-20 — Docker & Infrastructure
+
+- Added: multi-stage Docker builds, Traefik reverse proxy (`cycloveda.local` / `api.cycloveda.local`)
+- Added: `GET /health` endpoint, non-root container users, CSP in Nginx
+- Changed: CORS handling centralised at Traefik; FastAPI CORS middleware removed
+
+---
+
+## [0.3.0] - 2025-08-18 — Docs & Login Polish
+
+- Added: ADR system, JWT ADR, API reference, architecture and auth guides
+- Changed: login page UI improvements
+
+---
+
+## [0.2.0] - 2025-07-26 — Initial Full-Stack App
+
+- Added: React + TypeScript frontend with JWT auth, protected routes, error boundaries
+- Added: FastAPI backend with clean architecture, case-sensitive email auth, password hashing
+- Added: `pytest` test suite (unit + integration)
+
+---
+
+## [0.1.0] - 2025-07-19 — Project Bootstrap
+
+- Added: initial FastAPI and React scaffolding, git init, basic project config
+
+[Unreleased]: https://github.com/rhish9h/cyclo-veda/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.11.0...v0.12.0
+[0.11.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.3.0...v0.4.0

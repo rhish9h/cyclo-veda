@@ -2,12 +2,16 @@
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
 [project]
 name = "cyclo-veda-backend"
 version = "0.1.0"
 description = "Backend API for Cyclo Veda application"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.14"
 authors = [
     {name = "Cyclo Veda Team", email = "team@cycloveda.com"}
 ]
@@ -17,11 +21,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Framework :: FastAPI",
 ]
 
@@ -31,12 +31,15 @@ classifiers = [
 dependencies = [
     "fastapi>=0.116.0",
     "uvicorn>=0.32.0",
-    "python-jose[cryptography]>=3.3.0",
-    "passlib>=1.7.4",  # Remove bcrypt extra to avoid version conflicts
-    "bcrypt>=3.2.0,<4.0.0",  # Use older bcrypt version compatible with passlib
+    "PyJWT>=2.8.0",           # Replaces python-jose (abandoned, has CVEs)
+    "pwdlib[bcrypt]>=0.2.0",  # Replaces passlib + old bcrypt pin
     "python-dotenv>=1.0.1",  # Required for loading .env files in local development
     "email-validator>=2.1.0",  # Required for Pydantic email validation
     "httpx>=0.28.0",
+    "sqlalchemy>=2.0.0",      # ORM and database toolkit
+    "alembic>=1.13.0",        # Database migration tool
+    "asyncpg>=0.30.0",        # PostgreSQL driver
+    "cryptography>=42.0.0",   # Fernet encryption for Strava tokens (Phase 2)
 ]
 
 # Optional dependency groups
@@ -66,6 +69,7 @@ dev = [
     # Moved pre-commit from test to dev, removed jupyter (too heavy), removed watchdog (not essential)
     "pre-commit>=4.0.0",
     "ipython>=8.30.0",
+    "debugpy>=1.8.2",  # Remote debugging support
 ]
 
 [project.urls]
@@ -127,7 +131,7 @@ skip_covered = false
 
 [tool.black]
 line-length = 88
-target-version = ['py39', 'py310', 'py311', 'py312', 'py313']
+target-version = ['py314']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -151,7 +155,7 @@ known_first_party = ["app"]
 known_third_party = ["fastapi", "pydantic", "uvicorn"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

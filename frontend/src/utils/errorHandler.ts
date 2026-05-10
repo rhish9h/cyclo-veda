@@ -132,9 +132,4 @@ export const errorHandler = {
 };
 
 // Export individual functions for convenience
-export const {
-  handleApiError,
-  handleValidationError,
-  logError,
-  getDisplayMessage,
-} = errorHandler;
+export const { handleApiError, logError } = errorHandler;

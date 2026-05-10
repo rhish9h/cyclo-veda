@@ -1,14 +1,15 @@
 /**
  * Settings Component
- * 
+ *
  * User settings and account management page.
  * Features multiple sections for profile, security, preferences, and notifications.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Layout from '../Layout/Layout';
 import styles from './Settings.module.css';
 import ConnectionCard from './ConnectionCard/ConnectionCard';
+import stravaService from '../../../services/stravaService';
 
 interface SettingsData {
   profile: {
@@ -51,31 +52,72 @@ const Settings: React.FC = () => {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      phone: '+1 (555) 123-4567'
+      phone: '+1 (555) 123-4567',
     },
     security: {
       currentPassword: '',
       newPassword: '',
-      confirmPassword: ''
+      confirmPassword: '',
     },
     preferences: {
       theme: 'light',
       language: 'en',
-      timezone: 'America/New_York'
+      timezone: 'America/New_York',
     },
     notifications: {
       email: true,
       push: true,
-      marketing: false
+      marketing: false,
     },
     connections: {
       strava: {
         connected: false,
-        connectedAt: "",
-        syncActivities: false
-      }
-    }
+        connectedAt: '',
+        syncActivities: false,
+      },
+    },
   });
+
+  const updateStravaStatus = async () => {
+    const status = await stravaService.getStatus();
+
+    if (status) {
+      setSettingsData(prev => ({
+        ...prev,
+        connections: {
+          ...prev.connections,
+          strava: {
+            ...prev.connections.strava,
+            connected: status.connected,
+          }
+        }
+      }));
+    }
+  };
+
+  useEffect(() => {
+    updateStravaStatus();
+  }, []);
+
+  const handleStravaConnect = async () => {
+    const authUrl = await stravaService.connect();
+
+    if (authUrl) {
+      window.location.href = authUrl;
+    } else {
+      alert('Failed to connect to Strava. Please try again.');
+    }
+  }
+
+  const handleStravaDisconnect = async () => {
+    const success = await stravaService.disconnect();
+
+    if (success) {
+      await updateStravaStatus();
+    } else {
+      alert('Failed to disconnect Strava. Please try again.');
+    }
+  };
 
   /**
    * Settings navigation sections configuration
@@ -85,44 +127,48 @@ const Settings: React.FC = () => {
       id: 'profile',
       title: 'Profile',
       icon: '👤',
-      description: 'Personal information and account details'
+      description: 'Personal information and account details',
     },
     {
       id: 'security',
       title: 'Security',
       icon: '🔒',
-      description: 'Password and authentication settings'
+      description: 'Password and authentication settings',
     },
     {
       id: 'preferences',
       title: 'Preferences',
       icon: '⚙️',
-      description: 'App appearance and language settings'
+      description: 'App appearance and language settings',
     },
     {
       id: 'notifications',
       title: 'Notifications',
       icon: '🔔',
-      description: 'Email and push notification preferences'
+      description: 'Email and push notification preferences',
     },
     {
       id: 'connections',
       title: 'Connections',
       icon: '🔗',
-      description: 'Third-party service integrations'
-    }
+      description: 'Third-party service integrations',
+    },
   ];
 
   /**
    * Handle input changes in forms
    */
-  const handleInputChange = (section: keyof SettingsData, field: string, value: string | boolean) => {
+  const handleInputChange = (
+    section: keyof SettingsData,
+    field: string,
+    value: string | boolean
+  ) => {
     setSettingsData(prev => ({
       ...prev,
       [section]: {
         ...prev[section],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
@@ -151,7 +197,9 @@ const Settings: React.FC = () => {
                   type='text'
                   id='firstName'
                   value={settingsData.profile.firstName}
-                  onChange={(e) => handleInputChange('profile', 'firstName', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('profile', 'firstName', e.target.value)
+                  }
                 />
               </div>
               <div className={styles.formGroup}>
@@ -160,7 +208,9 @@ const Settings: React.FC = () => {
                   type='text'
                   id='lastName'
                   value={settingsData.profile.lastName}
-                  onChange={(e) => handleInputChange('profile', 'lastName', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('profile', 'lastName', e.target.value)
+                  }
                 />
               </div>
               <div className={styles.formGroup}>
@@ -169,7 +219,9 @@ const Settings: React.FC = () => {
                   type='email'
                   id='email'
                   value={settingsData.profile.email}
-                  onChange={(e) => handleInputChange('profile', 'email', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('profile', 'email', e.target.value)
+                  }
                 />
               </div>
               <div className={styles.formGroup}>
@@ -178,10 +230,16 @@ const Settings: React.FC = () => {
                   type='text'
                   id='phone'
                   value={settingsData.profile.phone}
-                  onChange={(e) => handleInputChange('profile', 'phone', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('profile', 'phone', e.target.value)
+                  }
                 />
               </div>
-              <button type='button' className={styles.saveButton} onClick={handleSave}>
+              <button
+                type='button'
+                className={styles.saveButton}
+                onClick={handleSave}
+              >
                 Save Profile
               </button>
             </form>
@@ -199,7 +257,13 @@ const Settings: React.FC = () => {
                   type='password'
                   id='currentPassword'
                   value={settingsData.security.currentPassword}
-                  onChange={(e) => handleInputChange('security', 'currentPassword', e.target.value)}
+                  onChange={e =>
+                    handleInputChange(
+                      'security',
+                      'currentPassword',
+                      e.target.value
+                    )
+                  }
                 />
               </div>
               <div className={styles.formGroup}>
@@ -208,7 +272,9 @@ const Settings: React.FC = () => {
                   type='password'
                   id='newPassword'
                   value={settingsData.security.newPassword}
-                  onChange={(e) => handleInputChange('security', 'newPassword', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('security', 'newPassword', e.target.value)
+                  }
                 />
               </div>
               <div className={styles.formGroup}>
@@ -217,10 +283,20 @@ const Settings: React.FC = () => {
                   type='password'
                   id='confirmPassword'
                   value={settingsData.security.confirmPassword}
-                  onChange={(e) => handleInputChange('security', 'confirmPassword', e.target.value)}
+                  onChange={e =>
+                    handleInputChange(
+                      'security',
+                      'confirmPassword',
+                      e.target.value
+                    )
+                  }
                 />
               </div>
-              <button type='button' className={styles.saveButton} onClick={handleSave}>
+              <button
+                type='button'
+                className={styles.saveButton}
+                onClick={handleSave}
+              >
                 Update Password
               </button>
             </form>
@@ -237,7 +313,9 @@ const Settings: React.FC = () => {
                 <select
                   id='theme'
                   value={settingsData.preferences.theme}
-                  onChange={(e) => handleInputChange('preferences', 'theme', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('preferences', 'theme', e.target.value)
+                  }
                 >
                   <option value='light'>Light</option>
                   <option value='dark'>Dark</option>
@@ -249,7 +327,9 @@ const Settings: React.FC = () => {
                 <select
                   id='language'
                   value={settingsData.preferences.language}
-                  onChange={(e) => handleInputChange('preferences', 'language', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('preferences', 'language', e.target.value)
+                  }
                 >
                   <option value='en'>English</option>
                   <option value='es'>Spanish</option>
@@ -262,7 +342,9 @@ const Settings: React.FC = () => {
                 <select
                   id='timezone'
                   value={settingsData.preferences.timezone}
-                  onChange={(e) => handleInputChange('preferences', 'timezone', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('preferences', 'timezone', e.target.value)
+                  }
                 >
                   <option value='America/New_York'>Eastern Time</option>
                   <option value='America/Chicago'>Central Time</option>
@@ -270,7 +352,11 @@ const Settings: React.FC = () => {
                   <option value='America/Los_Angeles'>Pacific Time</option>
                 </select>
               </div>
-              <button type='button' className={styles.saveButton} onClick={handleSave}>
+              <button
+                type='button'
+                className={styles.saveButton}
+                onClick={handleSave}
+              >
                 Save Preferences
               </button>
             </form>
@@ -287,7 +373,13 @@ const Settings: React.FC = () => {
                   <input
                     type='checkbox'
                     checked={settingsData.notifications.email}
-                    onChange={(e) => handleInputChange('notifications', 'email', e.target.checked)}
+                    onChange={e =>
+                      handleInputChange(
+                        'notifications',
+                        'email',
+                        e.target.checked
+                      )
+                    }
                   />
                   Email Notifications
                 </label>
@@ -298,7 +390,13 @@ const Settings: React.FC = () => {
                   <input
                     type='checkbox'
                     checked={settingsData.notifications.push}
-                    onChange={(e) => handleInputChange('notifications', 'push', e.target.checked)}
+                    onChange={e =>
+                      handleInputChange(
+                        'notifications',
+                        'push',
+                        e.target.checked
+                      )
+                    }
                   />
                   Push Notifications
                 </label>
@@ -309,13 +407,23 @@ const Settings: React.FC = () => {
                   <input
                     type='checkbox'
                     checked={settingsData.notifications.marketing}
-                    onChange={(e) => handleInputChange('notifications', 'marketing', e.target.checked)}
+                    onChange={e =>
+                      handleInputChange(
+                        'notifications',
+                        'marketing',
+                        e.target.checked
+                      )
+                    }
                   />
                   Marketing Emails
                 </label>
                 <small>Receive marketing and promotional emails</small>
               </div>
-              <button type='button' className={styles.saveButton} onClick={handleSave}>
+              <button
+                type='button'
+                className={styles.saveButton}
+                onClick={handleSave}
+              >
                 Save Notification Settings
               </button>
             </form>
@@ -327,11 +435,11 @@ const Settings: React.FC = () => {
           <div className={styles.settingsSectionContent}>
             <ConnectionCard
               service='Strava'
-              isConnected={false}
-              connectedAt=""
+              isConnected={settingsData.connections.strava.connected}
+              connectedAt=''
               syncActivities={false}
-              onConnect={() => {}}
-              onDisconnect={() => {}}
+              onConnect={handleStravaConnect}
+              onDisconnect={handleStravaDisconnect}
               onSyncToggle={() => {}}
             />
           </div>
@@ -343,23 +451,29 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <Layout title="Settings">
+    <Layout title='Settings'>
       <div className={styles.settingsContainer}>
         <div className={styles.settingsLayout}>
           {/* Settings Sidebar */}
           <aside className={styles.settingsSidebar}>
             <nav className={styles.settingsNav}>
               <ul className={styles.settingsNavList}>
-                {settingsSections.map((section) => (
+                {settingsSections.map(section => (
                   <li key={section.id} className={styles.settingsNavItem}>
                     <button
                       className={`${styles.settingsNavButton} ${activeSection === section.id ? styles.active : ''}`}
                       onClick={() => setActiveSection(section.id)}
                     >
-                      <span className={styles.settingsNavIcon}>{section.icon}</span>
+                      <span className={styles.settingsNavIcon}>
+                        {section.icon}
+                      </span>
                       <span className={styles.settingsNavText}>
-                        <span className={styles.settingsNavTitle}>{section.title}</span>
-                        <span className={styles.settingsNavDescription}>{section.description}</span>
+                        <span className={styles.settingsNavTitle}>
+                          {section.title}
+                        </span>
+                        <span className={styles.settingsNavDescription}>
+                          {section.description}
+                        </span>
                       </span>
                     </button>
                   </li>

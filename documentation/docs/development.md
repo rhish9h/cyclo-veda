@@ -4,8 +4,8 @@
 
 ### Backend
 - Python 3.13+
-- Poetry (for dependency management)
-- PostgreSQL (for production, SQLite for development)
+- pip with pyproject.toml (setuptools backend)
+- PostgreSQL (via Docker in dev, or a local PostgreSQL instance)
 
 ### Frontend
 - Node.js 18+
@@ -13,7 +13,45 @@
 
 ## Getting Started
 
-### Backend Setup
+### Docker Development (Recommended)
+
+The project uses Docker Compose for development with PostgreSQL, Traefik reverse proxy, and proper service ordering.
+
+**Prerequisites:**
+- Docker Desktop (or Docker Engine with Docker Compose)
+- Local hostname setup (optional, for nicer URLs)
+
+**Quick Start:**
+```bash
+# Copy environment files
+cp .env.example .env
+cp backend/.env.example backend/.env
+
+# Start all services (seeding happens automatically)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+**Access the application:**
+- Frontend: http://cycloveda.local (or http://localhost:5173 if running locally)
+- Backend API: http://api.cycloveda.local
+- Traefik Dashboard: http://localhost:8080
+
+**Development credentials:**
+- Email: `admin@cycloveda.com` | Password: `password`
+- Email: `user@example.com` | Password: `password`
+
+**Service architecture:**
+The Docker Compose setup follows best practices with proper service ordering:
+1. **postgres** - PostgreSQL database with health checks
+2. **migrate** - Alembic schema migrations (runs once, exits)
+3. **seed** - Development data seeding (runs automatically after migrations, idempotent)
+4. **backend** - FastAPI application (depends on migrations and seed completing)
+5. **traefik** - Reverse proxy with automatic service discovery
+
+**Seeding:**
+The seed service runs automatically on `docker compose up` and uses find-or-create logic, so it's idempotent (safe to run multiple times). Users are only created if they don't already exist.
+
+### Local Development (Backend)
 
 1. **Clone the repository**
    ```bash
@@ -21,10 +59,8 @@
    cd cyclo-veda/backend
    ```
 
-2. **Set up Python environment**
+2. **Install dependencies**
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # Windows: .\venv\Scripts\activate
    pip install -e ".[dev]"
    ```
 
@@ -36,13 +72,23 @@
    ALGORITHM=HS256
    ACCESS_TOKEN_EXPIRE_MINUTES=30
    
-   # Database (SQLite for development)
-   DATABASE_URL=sqlite:///./sql_app.db
+   # Database (PostgreSQL for development)
+   DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/cyclo_veda_dev
    ```
 
-4. **Start the server**
+4. **Run migrations**
    ```bash
-   uvicorn main:app --reload
+   alembic upgrade head
+   ```
+
+5. **Seed development users**
+   ```bash
+   python scripts/seed_dev_users.py
+   ```
+
+6. **Start the server**
+   ```bash
+   uvicorn app.main:app --reload
    ```
 
 ### Frontend Setup
@@ -66,17 +112,37 @@
 
 ## Testing
 
-### Backend Tests
+### Unit Tests (no DB required)
+
+Unit tests run automatically as part of the Docker build. The `test` stage in `backend/Dockerfile` runs `pytest tests/unit` — if any test fails, the build fails. The `runtime` stage inherits from `deps` (not `test`), so a prod build does **not** run tests.
+
+Run locally:
+
 ```bash
-# Run all tests
-pytest
+# All unit tests
+pytest tests/unit --override-ini="addopts=" -p no:cov -q
 
-# Run with coverage
-pytest --cov=app --cov-report=term-missing
+# Specific file
+pytest tests/unit/test_services/test_strava_service.py -p no:cov -q
 
-# Run specific test file
-pytest tests/unit/test_services/test_auth_service.py
+# With coverage (local only — requires pytest-cov)
+pytest tests/unit --cov=app --cov-report=term-missing
 ```
+
+### Integration Tests (requires PostgreSQL)
+
+Integration tests use a real ephemeral PostgreSQL database. Run via Docker Compose:
+
+```bash
+docker compose -f docker-compose.test.yml up --build \
+  --exit-code-from test-runner \
+  --renew-anon-volumes \
+  --remove-orphans
+```
+
+- Migrations (`alembic upgrade head`) run automatically inside the `test-runner` container before pytest.
+- Only outbound HTTP calls to Strava are mocked; all DB, encryption, and routing is exercised for real.
+- Exit code mirrors pytest: `0` = all pass, non-zero = failure.
 
 ### Frontend Tests
 ```bash

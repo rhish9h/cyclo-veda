@@ -17,16 +17,19 @@ Usage:
 import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, MagicMock, patch
 import os
 from datetime import datetime, timedelta
-from jose import jwt
+import jwt
+import app.utils.security as _security_module
 
 # Import your app components
 from app.main import app
 from app.services.auth_service import AuthService
-from app.models.user import User, UserCreate
+from app.schemas.user import User, UserCreate
 from app.auth.dependencies import get_current_user
+from app.database import get_db
+from app.repositories.user_repository import UserRepository
 
 
 @pytest.fixture
@@ -56,21 +59,56 @@ def auth_service():
     return AuthService()
 
 
+@pytest.fixture(autouse=True)
+def override_db():
+    """
+    Override the get_db FastAPI dependency with a mock session for all tests.
+
+    Prevents tests from requiring a live PostgreSQL connection.
+    The mock session is pre-configured to return test users via UserRepository.
+    """
+    mock_session = MagicMock()
+
+    # Build a realistic UserORM-like mock row for the two seed users
+    def _make_row(email, username, password="password"):
+        row = MagicMock()
+        row.id = 1 if "admin" in email else 2
+        row.email = email
+        row.username = username
+        row.is_active = True
+        row.hashed_password = AuthService.get_password_hash(password)
+        return row
+
+    admin_row = _make_row("admin@cycloveda.com", "admin")
+    user_row = _make_row("user@example.com", "testuser")
+
+    async def fake_get_by_email(db, email):
+        if email == "admin@cycloveda.com":
+            return admin_row
+        if email == "user@example.com":
+            return user_row
+        return None
+
+    # Patch repository at the module level so AuthService picks it up
+    with patch.object(UserRepository, 'get_by_email', new=AsyncMock(side_effect=fake_get_by_email)):
+        app.dependency_overrides[get_db] = lambda: mock_session
+        yield mock_session
+        app.dependency_overrides.pop(get_db, None)
+
+
 @pytest.fixture
 def mock_user():
     """
-    Mock user fixture for testing
-    
-    Provides a consistent test user object for use in tests.
-    
+    Mock user fixture for testing.
+
     Returns:
         User: Test user object with known properties
     """
     return User(
-        email="user@example.com",  # Must match email in fake_users_db
+        id=2,
+        email="user@example.com",
         username="testuser",
-        hashed_password="$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",  # "secret"
-        is_active=True
+        is_active=True,
     )
 
 
@@ -108,7 +146,8 @@ def valid_token(mock_user):
     from app.services.auth_service import SECRET_KEY, ALGORITHM
     
     # Create token data
-    expire = datetime.utcnow() + timedelta(minutes=30)
+    from datetime import timezone
+    expire = datetime.now(timezone.utc) + timedelta(minutes=30)
     token_data = {
         "sub": mock_user.email,
         "exp": expire
@@ -136,7 +175,8 @@ def expired_token(mock_user):
     from app.services.auth_service import SECRET_KEY, ALGORITHM
     
     # Create expired token data
-    expire = datetime.utcnow() - timedelta(minutes=30)  # Already expired
+    from datetime import timezone
+    expire = datetime.now(timezone.utc) - timedelta(minutes=30)  # Already expired
     token_data = {
         "sub": mock_user.email,
         "exp": expire
@@ -240,6 +280,19 @@ def invalid_login_data():
         "email": "invalid@example.com",
         "password": "wrongpassword"
     }
+
+
+@pytest.fixture(autouse=True)
+def reset_fernet_singleton():
+    """Reset the module-level Fernet cache before each test.
+
+    security.py caches the Fernet instance after first use. Without this
+    fixture, whichever test runs first locks in the key for the entire session,
+    causing failures if STRAVA_ENCRYPTION_KEY is loaded late or changes.
+    """
+    _security_module._fernet_instance = None
+    yield
+    _security_module._fernet_instance = None
 
 
 # Pytest configuration

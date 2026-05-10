@@ -107,7 +107,6 @@ class AuthService {
   logout(): void {
     try {
       storage.remove(STORAGE_KEYS.ACCESS_TOKEN);
-      storage.remove(STORAGE_KEYS.USER_DATA);
     } catch (error) {
       errorHandler.logError(error as Error, 'AuthService.logout');
     }
@@ -147,15 +146,6 @@ class AuthService {
       this.logout();
       return false;
     }
-  }
-
-  /**
-   * Refresh authentication token if needed
-   * This is a placeholder for future implementation
-   */
-  async refreshToken(): Promise<void> {
-    // TODO: Implement token refresh logic when backend supports it
-    throw new Error('Token refresh not implemented yet');
   }
 }
 

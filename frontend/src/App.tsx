@@ -4,12 +4,7 @@
  */
 
 import { Suspense, lazy } from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router';
 import { ROUTES } from './constants';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import ProtectedRoute from './components/auth/ProtectedRoute';

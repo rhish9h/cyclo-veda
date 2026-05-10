@@ -1,9 +1,13 @@
-"""Token-related Pydantic models for authentication.
+"""Token-related Pydantic schemas for authentication.
 
 This module defines the data structures used for:
 - JWT token responses
 - Token data storage and validation
 - Authentication token handling
+
+Naming convention:
+- This file is a Pydantic schema (validation/serialization).
+- SQLAlchemy ORM models live in app/models/.
 """
 
 from datetime import datetime
@@ -12,7 +16,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 class Token(BaseModel):
-    """JWT token response model."""
+    """JWT token response schema."""
     access_token: str = Field(
         ...,
         description="JWT access token for authentication"
@@ -31,7 +35,7 @@ class Token(BaseModel):
     )
 
     class Config:
-        json_schema_extra = {  # Updated from schema_extra for Pydantic V2
+        json_schema_extra = {
             "example": {
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "token_type": "bearer",
@@ -57,7 +61,7 @@ class TokenData(BaseModel):
     )
 
     class Config:
-        json_schema_extra = {  # Updated from schema_extra for Pydantic V2
+        json_schema_extra = {
             "example": {
                 "email": "user@example.com",
                 "scopes": ["read", "write"],

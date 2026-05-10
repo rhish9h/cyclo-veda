@@ -1,0 +1,61 @@
+# Development overrides — apply on top of docker-compose.yml:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# What this file changes vs the base:
+#   - backend: mounts source code for hot reload, dev container name
+#   - migrate: dev container name
+#   - seed: automatic development user seeding (idempotent, runs after migrations)
+#   - traefik: writable docker.sock (some Docker Desktop versions need this), dashboard enabled
+#   - CORS: adds localhost:5173 for local frontend dev server
+#   - frontend: not included (run locally with `npm run dev` for fastest HMR)
+#
+# Startup order:
+#   postgres → migrate → seed → backend
+# Seed is idempotent (find-or-create) and runs automatically on dev compose up
+
+services:
+  migrate:
+    container_name: cyclo-veda-migrate-dev
+
+  seed:
+    image: cyclo-veda-backend
+    command: ["python", "scripts/seed_dev_users.py"]
+    container_name: cyclo-veda-seed-dev
+    env_file:
+      - ./backend/.env  # Provides DATABASE_URL; seed script only uses DATABASE_URL + ENVIRONMENT
+    environment:
+      ENVIRONMENT: development  # Explicit — do not rely on the default fallback in seed_dev_users.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - cyclo-veda
+
+  backend:
+    container_name: cyclo-veda-backend-dev
+    build:
+      target: dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      seed:
+        condition: service_completed_successfully
+    ports:
+      - "5678:5678"  # Debugpy port for remote debugging
+    volumes:
+      - ./backend:/app  # Hot reload — uvicorn picks up code changes instantly
+    labels:
+      # Override CORS to also allow the local Vite dev server
+      - "traefik.http.middlewares.cors.headers.accesscontrolalloworiginlist=http://localhost:5173,http://cycloveda.local,https://cycloveda.local"
+
+  traefik:
+    container_name: cyclo-veda-traefik-dev
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Writable — needed on some Docker Desktop versions
+      - ./traefik-data:/data

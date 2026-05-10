@@ -28,12 +28,28 @@ services:
       - cyclo-veda
     restart: unless-stopped
 
+  # Database migration init container — runs alembic upgrade head then exits.
+  # Backend will not start until this completes successfully.
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: alembic upgrade head
+    env_file:
+      - ./backend/.env
+    networks:
+      - cyclo-veda
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   # Backend API service
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: cyclo-veda-backend
+    image: cyclo-veda-backend
     env_file:
       - ./backend/.env
     labels:
@@ -63,41 +79,13 @@ services:
       retries: 3
       start_period: 40s
     depends_on:
-      - postgres
+      migrate:
+        condition: service_completed_successfully
 
-  # Frontend web application
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_BASE_URL: http://api.cycloveda.local
-    container_name: cyclo-veda-frontend
-    labels:
-      - "traefik.enable=true"
-      # HTTP router
-      - "traefik.http.routers.frontend.rule=Host(`cycloveda.local`)"
-      - "traefik.http.routers.frontend.entrypoints=web"
-      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
-      # HTTPS router (commented out for local development)
-      # - "traefik.http.routers.frontend-secure.rule=Host(`cycloveda.local`)"
-      # - "traefik.http.routers.frontend-secure.entrypoints=websecure"
-      # - "traefik.http.routers.frontend-secure.tls=true"
-    networks:
-      - cyclo-veda
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    depends_on:
-      - backend
 
   # Postgres database
   postgres:
-    image: postgres:17.7
+    image: postgres:18.3
     container_name: cyclo-veda-postgres
     environment:
       # TODO: might need to switch to secrets files for prod, research and take a call
@@ -105,7 +93,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql
     networks:
       - cyclo-veda
     restart: unless-stopped

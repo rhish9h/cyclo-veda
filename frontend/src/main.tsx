@@ -48,7 +48,7 @@ function initializeApp(): void {
 // Initialize the application with error handling
 try {
   initializeApp();
-} catch (error) {
+} catch (_error) {
   // Fallback error display if even the error boundary fails
   const rootElement = document.getElementById(DOM_ELEMENTS.ROOT_ID);
   if (rootElement) {

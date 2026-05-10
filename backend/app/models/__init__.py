@@ -1,34 +1,18 @@
 """Models package for Cyclo Veda application.
 
-This package contains all Pydantic models used throughout the application,
-organized by domain for better maintainability.
+This package contains SQLAlchemy ORM models (database table definitions).
+
+Naming convention:
+- models/   → SQLAlchemy ORM models for database tables
+- schemas/  → Pydantic models for API request/response validation
 """
 
-# User-related models
-from .user import (
-    UserBase,
-    UserCreate,
-    UserLogin,
-    UserInDB,
-    User,
-    UserResponse,
-)
-
-# Token-related models
-from .token import (
-    Token,
-    TokenData,
-)
+from .base import Base
+from .strava_token import StravaTokenORM
+from .user import UserORM
 
 __all__ = [
-    # User models
-    "UserBase",
-    "UserCreate", 
-    "UserLogin",
-    "UserInDB",
-    "User",
-    "UserResponse",
-    # Token models
-    "Token",
-    "TokenData",
+    "Base",
+    "StravaTokenORM",
+    "UserORM",
 ]

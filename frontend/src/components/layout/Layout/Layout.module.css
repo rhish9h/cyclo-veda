@@ -217,20 +217,20 @@
   .layoutHeader {
     padding: 16px 20px;
   }
-  
+
   .layoutHeaderTitle {
     font-size: 20px;
   }
-  
+
   .layoutHeaderActions {
     gap: 8px;
   }
-  
+
   .layoutHeaderButton {
     padding: 8px 16px;
     font-size: 12px;
   }
-  
+
   .layoutSidebar {
     position: fixed;
     top: 0;
@@ -239,15 +239,15 @@
     z-index: 999;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
   }
-  
+
   .layoutContent {
     padding: 20px;
   }
-  
+
   .sidebarToggle {
     display: block;
   }
-  
+
   .footerContent {
     flex-direction: column;
     gap: 8px;
@@ -261,11 +261,11 @@
     gap: 12px;
     padding: 12px 16px;
   }
-  
+
   .layoutContent {
     padding: 16px;
   }
-  
+
   .layoutFooter {
     padding: 16px 20px;
   }
@@ -276,7 +276,7 @@
   .layoutSidebar.open {
     transform: translateX(0);
   }
-  
+
   .layoutSidebar.closed {
     transform: translateX(-100%);
   }

@@ -1,6 +1,6 @@
 /**
  * Footer Component
- * 
+ *
  * Simple footer component for all authenticated pages.
  * Contains copyright information and app version.
  */
@@ -21,9 +21,7 @@ const Footer: React.FC = () => {
         <p className={styles.footerText}>
           © {currentYear} Cyclo Veda. All rights reserved.
         </p>
-        <p className={styles.footerVersion}>
-          Version {appVersion}
-        </p>
+        <p className={styles.footerVersion}>Version {appVersion}</p>
       </div>
     </footer>
   );
