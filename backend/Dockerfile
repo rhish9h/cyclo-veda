@@ -50,8 +50,8 @@ USER app
 
 EXPOSE 8000 5678
 
-# Start with debugpy listener, wait for debugger attachment, then run uvicorn with reload
-CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start debugpy listener (attach anytime on port 5678), then run uvicorn
+CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # =============================================================================
 # Stage 3: runtime — production image, inherits from deps (not test)
