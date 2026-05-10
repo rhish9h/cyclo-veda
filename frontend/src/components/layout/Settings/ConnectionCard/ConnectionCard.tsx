@@ -7,8 +7,6 @@
 
 import React, { useState } from 'react';
 import styles from './ConnectionCard.module.css';
-import authService from '../../../../services/authService';
-import { API_BASE_URL, API_ENDPOINTS } from '../../../../constants';
 
 interface ConnectionCardProps {
   service: string;
@@ -28,7 +26,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   isConnected,
   // connectedAt,
   // syncActivities,
-  // onConnect,
+  onConnect,
   onDisconnect,
   // onSyncToggle
 }) => {
@@ -36,36 +34,10 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   
   const handleConnect = async () => {
     setIsLoading(true);
-
-    const token = authService.getToken();
-    if (!token) {
-      console.error('No token found');
-      alert('Please login first');
-      setIsLoading(false);
-      return;
-    }
-
-    try{
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.STRAVA.CONNECT}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.detail || 'Failed to connect to Strava');
-      }
-
-      const data = await response.json();
-      window.location.href = data.auth_url;
+    try {
+      await onConnect();
     } catch (error) {
-      console.error('Error connecting to Strava:', error);
-      alert('Failed to connect to Strava. Please try again.');
+      console.error('Failed to connect to Strava');
     } finally {
       setIsLoading(false);
     }

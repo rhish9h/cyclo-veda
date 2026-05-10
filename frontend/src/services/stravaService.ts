@@ -48,6 +48,39 @@ const stravaService = {
         }
     },
     /**
+     * Connect the current Strava connection for the authenticated user
+     */
+    async connect(): Promise<string | null> {
+        const token = authService.getToken();
+        if (!token) {
+            console.error('No token found');
+            return null;
+        }
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}${API_ENDPOINTS.STRAVA.CONNECT}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.detail || 'Failed to connect to Strava');
+            }
+
+            const data = await response.json();
+            return data.auth_url;
+        } catch (error) {
+            console.error('Error connecting to Strava:', error);
+            return null;
+        }
+    },
+    /**
      * Disconnect the current Strava connection for the authenticated user
      */
     async disconnect(): Promise<boolean> {

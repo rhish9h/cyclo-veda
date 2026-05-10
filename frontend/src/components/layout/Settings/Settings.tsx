@@ -99,6 +99,16 @@ const Settings: React.FC = () => {
     updateStravaStatus();
   }, []);
 
+  const handleStravaConnect = async () => {
+    const authUrl = await stravaService.connect();
+
+    if (authUrl) {
+      window.location.href = authUrl;
+    } else {
+      alert('Failed to connect to Strava. Please try again.');
+    }
+  }
+
   const handleStravaDisconnect = async () => {
     const success = await stravaService.disconnect();
 
@@ -428,7 +438,7 @@ const Settings: React.FC = () => {
               isConnected={settingsData.connections.strava.connected}
               connectedAt=''
               syncActivities={false}
-              onConnect={() => {}}
+              onConnect={handleStravaConnect}
               onDisconnect={handleStravaDisconnect}
               onSyncToggle={() => {}}
             />
