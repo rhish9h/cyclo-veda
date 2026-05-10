@@ -5,7 +5,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 - Upcoming: advanced user management, enhanced dashboard
-- Added: backend debugging support via debugpy dev stage and VS Code remote attach
+
+---
+
+## [0.12.0] - 2026-05-10 — Strava Status Fix
+
+- Added: frontend stravaService for Strava API calls (getStatus, connect, disconnect)
+- Fixed: Strava connection status now fetched from backend on mount instead of hardcoded
+- Changed: ConnectionCard delegates to parent handlers for connect/disconnect
 
 ---
 
@@ -98,7 +105,8 @@ All notable changes to this project will be documented in this file.
 
 - Added: initial FastAPI and React scaffolding, git init, basic project config
 
-[Unreleased]: https://github.com/rhish9h/cyclo-veda/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/rhish9h/cyclo-veda/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/rhish9h/cyclo-veda/compare/v0.8.0...v0.9.0
