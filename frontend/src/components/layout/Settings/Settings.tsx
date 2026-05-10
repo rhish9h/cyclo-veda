@@ -5,10 +5,11 @@
  * Features multiple sections for profile, security, preferences, and notifications.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Layout from '../Layout/Layout';
 import styles from './Settings.module.css';
 import ConnectionCard from './ConnectionCard/ConnectionCard';
+import stravaService from '../../../services/stravaService';
 
 interface SettingsData {
   profile: {
@@ -76,6 +77,27 @@ const Settings: React.FC = () => {
       },
     },
   });
+
+  useEffect(() => {
+    const fetchStravaStatus = async () => {
+      const status = await stravaService.getStatus();
+
+      if (status) {
+        setSettingsData(prev => ({
+          ...prev,
+          connections: {
+            ...prev.connections,
+            strava: {
+              ...prev.connections.strava,
+              connected: status.connected,
+            }
+          }
+        }))
+      }
+    };
+
+    fetchStravaStatus();
+  }, []);
 
   /**
    * Settings navigation sections configuration
@@ -393,7 +415,7 @@ const Settings: React.FC = () => {
           <div className={styles.settingsSectionContent}>
             <ConnectionCard
               service='Strava'
-              isConnected={false}
+              isConnected={settingsData.connections.strava.connected}
               connectedAt=''
               syncActivities={false}
               onConnect={() => {}}

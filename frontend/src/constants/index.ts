@@ -8,6 +8,8 @@ export const API_ENDPOINTS = {
   },
   STRAVA: {
     CONNECT: '/api/strava/connect',
+    STATUS: '/api/strava/status',
+    DISCONNECT: '/api/strava/disconnect',
   },
 } as const;
 
