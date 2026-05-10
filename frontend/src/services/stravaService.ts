@@ -47,6 +47,36 @@ const stravaService = {
             return null;
         }
     },
+    /**
+     * Disconnect the current Strava connection for the authenticated user
+     */
+    async disconnect(): Promise<boolean> {
+        const token = authService.getToken();
+        if (!token) {
+            return false;
+        }
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}${API_ENDPOINTS.STRAVA.DISCONNECT}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                }
+            );
+
+            if (response.ok) {
+                return true;
+            }
+
+            throw new Error(`Failed to disconnect: ${response.status}`);
+        } catch (error) {
+            console.error('Error disconnecting Strava:', error);
+            return false;
+        }
+    },
 };
 
 export default stravaService;

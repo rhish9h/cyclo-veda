@@ -78,26 +78,36 @@ const Settings: React.FC = () => {
     },
   });
 
-  useEffect(() => {
-    const fetchStravaStatus = async () => {
-      const status = await stravaService.getStatus();
+  const updateStravaStatus = async () => {
+    const status = await stravaService.getStatus();
 
-      if (status) {
-        setSettingsData(prev => ({
-          ...prev,
-          connections: {
-            ...prev.connections,
-            strava: {
-              ...prev.connections.strava,
-              connected: status.connected,
-            }
+    if (status) {
+      setSettingsData(prev => ({
+        ...prev,
+        connections: {
+          ...prev.connections,
+          strava: {
+            ...prev.connections.strava,
+            connected: status.connected,
           }
-        }))
-      }
-    };
+        }
+      }));
+    }
+  };
 
-    fetchStravaStatus();
+  useEffect(() => {
+    updateStravaStatus();
   }, []);
+
+  const handleStravaDisconnect = async () => {
+    const success = await stravaService.disconnect();
+
+    if (success) {
+      await updateStravaStatus();
+    } else {
+      alert('Failed to disconnect Strava. Please try again.');
+    }
+  };
 
   /**
    * Settings navigation sections configuration
@@ -419,7 +429,7 @@ const Settings: React.FC = () => {
               connectedAt=''
               syncActivities={false}
               onConnect={() => {}}
-              onDisconnect={() => {}}
+              onDisconnect={handleStravaDisconnect}
               onSyncToggle={() => {}}
             />
           </div>
