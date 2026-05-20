@@ -2,7 +2,7 @@
 
 Feature backlog organized by priority bucket. Each file is a brief entry (title + description) capturing the idea before detailed design begins.
 
-When a feature is ready to be built, a full design spec is created in `../design/`.
+When a feature is ready to be built, a full design spec is created in `../specs/design/`.
 
 ## Milestones (in order)
 
